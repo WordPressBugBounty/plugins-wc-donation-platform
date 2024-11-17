@@ -55,16 +55,21 @@ do_action('woocommerce_before_add_to_cart_form');
     if ($value['style'] != '4') {
         echo ' id="wcdp-ajax-send"';
         echo ' method="post"';
+        echo ' action="' . admin_url('admin-ajax.php') . '"';
     } else {
         echo ' id="wcdp-get-send"';
-        echo ' method="get"';
-    } ?>
-          action="<?php
-          if ($value['style'] != '4') {
-              echo admin_url('admin-ajax.php');
-          } else {
-              echo wc_get_checkout_url();
-          } ?>"
+        if (get_option('wcdp_redirect_to_cart', 'no') === 'no') {
+            echo ' method="get"';
+            echo ' action="' . wc_get_checkout_url() . '"';
+        } else {
+            echo ' method="post"';
+            echo ' action="' . wc_get_cart_url() . '"';
+        }
+    }
+    if ($context === 'embed') {
+        echo ' target="_blank"';
+    }
+    ?>
           autocomplete="off" enctype='multipart/form-data' data-product_id="<?php echo $value['id']; ?>"
         <?php if ($has_child): ?>
             data-product_variations="<?php echo $variations_attr; ?>"
@@ -103,10 +108,10 @@ do_action('woocommerce_before_add_to_cart_form');
         <div class="wcdp-divider"></div>
 
         <?php //WooCommerce Add to Cart & Quantity (invisible) ?>
-        <input style="display:none !important;" type="number" name="quantity" class="quantity qty" value="1">
+        <input style="display:none !important;" type="number" name="quantity" class="quantity qty" value="1" aria-hidden="true">
         <?php
-        /** @var bool $is_internal */
-        if ($value['style'] == 4 && $is_internal) {
+        /** @var bool $context */
+        if ($value['style'] == 4 && $context == 'product-page') {
             echo '<input class="wcdp-express-amount" style="display:none !important;" type="number" step="any" name="attribute_wcdp_donation_amount" value="1">';
             do_action('wcdp_express_checkout_heading');
             do_action('woocommerce_after_add_to_cart_quantity');
@@ -119,7 +124,7 @@ do_action('woocommerce_before_add_to_cart_form');
     </form>
 
 <?php
-if ($value['style'] == 4 && $is_internal) {
+if ($value['style'] == 4 && $context == 'product-page') {
     //Add a input field to communicate correct donation amount to Stripe & PayPal Express donation buttons
     do_action('wcdp_express_checkout_amount_variation');
 

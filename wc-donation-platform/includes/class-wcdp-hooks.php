@@ -44,7 +44,7 @@ class WCDP_Hooks
             add_action('woocommerce_product_related_products_heading', array($this, 'wcdp_product_related_products_heading'));
 
             //Change "Add to Cart" Button Text
-            add_filter('woocommerce_product_add_to_cart_text', array($this, 'product_add_to_cart_text'));
+            add_filter('woocommerce_product_add_to_cart_text', array($this, 'product_add_to_cart_text'), 10, 2);
         }
 
         //Change "Add to Cart" Button
@@ -99,7 +99,7 @@ class WCDP_Hooks
     public function wcdp_modify_template($template = '', $template_name = '', $args = array(), $template_path = '', $default_path = ''): string
     {
         //Return if the template has been overwritten in yourtheme/woocommerce/XXX
-        if (!str_starts_with($template_name, 'single-product') && [strlen($template) - strlen($template_name) - 2] === 'e') {
+        if (!str_starts_with($template_name, 'single-product') && $template[strlen($template) - strlen($template_name) - 2] === 'e') {
             return $template;
         }
 
@@ -119,7 +119,6 @@ class WCDP_Hooks
 
             case 'myaccount/dashboard.php':
             case 'myaccount/view-order.php':
-            case 'myaccount/my-address.php':
             case 'myaccount/orders.php':
             case 'myaccount/downloads.php':
 
@@ -350,7 +349,7 @@ class WCDP_Hooks
             echo WCDP_Form::wcdp_donation_form(array(
                 'id' => $id,
                 'style' => 'checkout',
-            ), true);
+            ), 'checkout');
         }
     }
 
@@ -388,11 +387,17 @@ class WCDP_Hooks
 
     /**
      * Turn Add to cart text into learn more
+     * @param $text
+     * @param $product WC_Product
      * @return string
      */
-    public function product_add_to_cart_text(): string
+    public function product_add_to_cart_text($text, $product): string
     {
-        return __('Learn more', 'wc-donation-platform');
+        if (WCDP_Form::is_donable($product->get_id())) {
+            return __('Learn more', 'wc-donation-platform');
+        } else {
+            return $text;
+        }
     }
 
     /**
@@ -406,6 +411,9 @@ class WCDP_Hooks
      */
     public function wcdp_loop_add_to_cart_link($html, $product, array $args = array()): string
     {
+        if (!WCDP_Form::is_donable($product->get_id())) {
+            return $html;
+        }
         return sprintf(
             '<a href="%s" class="button" %s>%s</a>',
             esc_url($product->get_permalink()),
@@ -425,11 +433,11 @@ class WCDP_Hooks
     public function wcdp_autocomplete_order($needs_processing, WC_Product $product, int $order_id): bool
     {
         if ($needs_processing && $product->is_virtual()) {
-            if (!WCDP_Form::is_donable($product->get_id()) && !WCDP_Form::is_donable($product->get_parent_id())) {
-                return true;
+            if (WCDP_Form::is_donable($product->get_id()) || WCDP_Form::is_donable($product->get_parent_id())) {
+                return false;
             }
         }
-        return false;
+        return $needs_processing;
     }
 
     /**

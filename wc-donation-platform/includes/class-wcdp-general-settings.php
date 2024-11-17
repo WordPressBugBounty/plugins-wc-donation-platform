@@ -12,6 +12,7 @@ class WCDP_General_Settings
         add_filter('woocommerce_settings_tabs_array', array($this, 'add_settings_tab'), 50);
         add_action('woocommerce_settings_tabs_wc-donation-platform', array($this, 'settings_tab'));
         add_action('woocommerce_update_options_wc-donation-platform', array($this, 'update_settings'));
+        add_action('woocommerce_update_options_advanced', array($this, 'disable_new_product_editor'));
 
         if (function_exists('wp_add_privacy_policy_content')) {
             add_action( 'admin_init', array($this, 'suggest_privacy_policy_content') );
@@ -28,6 +29,14 @@ class WCDP_General_Settings
     {
         $settings_tabs['wc-donation-platform'] = __('Donations', 'wc-donation-platform');
         return $settings_tabs;
+    }
+
+    /**
+     * Disables the new product block editor since WCDP is not compatible
+     * @return void
+     */
+    public function disable_new_product_editor() {
+        update_option('woocommerce_feature_product_block_editor_enabled', 'no');
     }
 
     /**
@@ -66,6 +75,13 @@ class WCDP_General_Settings
                 'title' => __('Allow more than one product in cart', 'wc-donation-platform'),
                 'desc' => __('Should it be possible to have more than one donation product in the cart at the same time?', 'wc-donation-platform'),
                 'id' => 'wcdp_multiple_in_cart',
+                'default' => 'no',
+                'type' => 'checkbox',
+            ),
+            array(
+                'title' => __('Redirect to Cart Instead of Checkout', 'wc-donation-platform'),
+                'desc' => __('Would you like to redirect users to the cart when they proceed to the next step in Style 4 or from product pages?', 'wc-donation-platform'),
+                'id' => 'wcdp_redirect_to_cart',
                 'default' => 'no',
                 'type' => 'checkbox',
             ),
@@ -155,7 +171,7 @@ class WCDP_General_Settings
             array(
                 'name' => __('Leaderborard Options', 'wc-donation-platform'),
                 'type' => 'title',
-                'desc' => '<a href="https://wcdp.jonh.eu/documentation/usage/donation-leaderboard/" target="_blank">' . esc_html__('Detailed leaderboard documentation', 'wc-donation-platform') . '</a>',
+                'desc' => '<a href="https://www.wc-donation.com/documentation/usage/donation-leaderboard/" target="_blank">' . esc_html__('Detailed leaderboard documentation', 'wc-donation-platform') . '</a>',
                 'id' => 'wcdp_leaderboard_options',
             ),
             array(
@@ -270,7 +286,7 @@ class WCDP_General_Settings
         return apply_filters('wcdp-general-settings', $settings);
     }
 
-    private function clear_cached_data()
+    public static function clear_cached_data()
     {
         WCDP_Progress::delete_total_revenue_meta_for_all_products();
         WCDP_Leaderboard::delete_cached_leaderboard_total();
@@ -308,6 +324,9 @@ class WCDP_General_Settings
         update_option('wcdp_fee_recovery_values', wp_json_encode($wcdp_fee_recovery_values), 'yes');
 
         woocommerce_update_options(self::get_settings());
+
+        // Make sure to disable Product block editor
+        update_option('woocommerce_feature_product_block_editor_enabled', 'no');
     }
 
     /**
@@ -335,7 +354,7 @@ class WCDP_General_Settings
                 '<li>' . __('Your information will not be disclosed to third parties except when required by law, with your explicit consent, when necessary for providing our services such as payment processing, and in cases where it is in our legitimate interest, such as fraud prevention.', 'wc-donation-platform') . '</li>' .
             '</ul>' .
             '</div>',
-            '<a href="https://wcdp.jonh.eu/" target="_blank">',
+            '<a href="https://www.wc-donation.com/" target="_blank">',
             '</a>'
         );
 

@@ -1,19 +1,19 @@
 === Donation Platform for WooCommerce: Fundraising & Donation Management ===
 Contributors: flinnn
 Tags: donation, fundraising, charity, woocommerce donation, recurring donation
-Donate link: https://wcdp.jonh.eu/documentation/support/contact/
+Donate link: https://www.wc-donation.com/documentation/support/contact/
 Requires at least: 5.8
-Tested up to: 6.5
-Stable tag: 1.3.2
+Tested up to: 6.7
+Stable tag: 1.3.3
 Requires PHP: 7.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-100% free donation system for your fundraising that supports recurring donations and more
+Open source donation system for your fundraising that supports recurring donations and more
 
 == Description ==
 
-[🚀 Demos](https://wcdp.jonh.eu/demos/demo-style-1/) | [📚 Docs](https://wcdp.jonh.eu/documentation/) | [🏁 Getting Started](https://wcdp.jonh.eu/documentation/getting-started/first-steps/)
+[🚀 Demos](https://www.wc-donation.com/demos/demo-style-1/) | [📚 Docs](https://www.wc-donation.com/documentation/) | [🏁 Getting Started](https://www.wc-donation.com/documentation/getting-started/first-steps/)
 
 **Transform WooCommerce into a robust platform for seamless fundraising, crowdfunding & donation management!**
 
@@ -25,10 +25,10 @@ Unlock the potential of WooCommerce for your charity or fundraising efforts:
 * 🎨 **Modern Design**: Access sleek and elegant donation form designs that captivate donors' attention and make it quick and easy to donate.
 * 🧾 **Automatic Donation Receipts**: Generate PDF donation receipts effortlessly, enhancing donor confidence and trust.
 * 💸 **100+ Payment Gateways**: Diverse options for lower transaction fees, enabling greater flexibility for donors.
-* 🚀 **Express Donations**: Your supporters can donate quickly using [Apple Pay](https://wcdp.jonh.eu/documentation/integrations/express-donations-apple-pay-google-pay-paypal/), [Google Pay](https://wcdp.jonh.eu/documentation/integrations/express-donations-apple-pay-google-pay-paypal/) & [PayPal](https://wcdp.jonh.eu/documentation/integrations/express-donations-apple-pay-google-pay-paypal/), providing a hassle-free giving experience.
+* 🚀 **Express Donations**: Your supporters can donate quickly using [Apple Pay](https://www.wc-donation.com/documentation/integrations/express-donations-apple-pay-google-pay-paypal/), [Google Pay](https://www.wc-donation.com/documentation/integrations/express-donations-apple-pay-google-pay-paypal/) & [PayPal](https://www.wc-donation.com/documentation/integrations/express-donations-apple-pay-google-pay-paypal/), providing a hassle-free giving experience.
 * 💰 **Fee Recovery**: Encourage donors to cover transaction costs, ensuring more funds go towards your cause.
-* 🏆 **Donation Leaderboard**: Showcase top donors with a [donor wall](https://wcdp.jonh.eu/documentation/usage/donation-leaderboard/), recognizing and motivating generous contributions.
-* 🆓 **100% Free & Open Source**: No platform fees or subscriptions, ensuring accessibility for charities of all sizes!
+* 🏆 **Donation Leaderboard**: Showcase top donors with a [donor wall](https://www.wc-donation.com/documentation/usage/donation-leaderboard/), recognizing and motivating generous contributions.
+* 🆓 **Free & Open Source**: No platform fees or subscriptions, ensuring accessibility for charities of all sizes!
 
 = 🌟 The Ultimate WooCommerce Donation Solution =
 
@@ -38,15 +38,15 @@ Harness the power of WooCommerce for online fundraising, crowdfunding, and donor
 
 == 🎯 Essential Fundraising Features 🎯 ==
 
-* 🌟 **Beautiful Design**: Five elegant donation form templates, adaptable to suit your [branding](https://wcdp.jonh.eu/documentation/usage/design-customization/).
-* 🌐 **Mobile-Optimized**: Perfectly designed for [mobile fundraising](https://wcdp.jonh.eu/documentation/usage/mobile-optimization/), ensuring accessibility from anywhere.
+* 🌟 **Beautiful Design**: Five elegant donation form templates, adaptable to suit your [branding](https://www.wc-donation.com/documentation/usage/design-customization/).
+* 🌐 **Mobile-Optimized**: Perfectly designed for [mobile fundraising](https://www.wc-donation.com/documentation/usage/mobile-fundraising/), ensuring accessibility from anywhere.
 * 🛒 **100+ Payment Gateways**: Variety to reduce transaction fees and accommodate donor preferences.
-* 📊 **Advanced Donation Management**: Streamlined donor & customer management for [efficient tracking](https://wcdp.jonh.eu/documentation/usage/advanced-donation-management/).
-* 💳 **Express Donations**: [Apple Pay](https://wcdp.jonh.eu/documentation/integrations/express-donations-apple-pay-google-pay-paypal), [Google Pay](https://wcdp.jonh.eu/documentation/integrations/express-donations-apple-pay-google-pay-paypal) & [PayPal](https://wcdp.jonh.eu/documentation/integrations/express-donations-apple-pay-google-pay-paypal) integration for swift contributions.
+* 📊 **Advanced Donation Management**: Streamlined donor & customer management for [efficient tracking](https://www.wc-donation.com/documentation/usage/advanced-donation-management/).
+* 💳 **Express Donations**: [Apple Pay](https://www.wc-donation.com/documentation/integrations/express-donations-apple-pay-google-pay-paypal), [Google Pay](https://www.wc-donation.com/documentation/integrations/express-donations-apple-pay-google-pay-paypal) & [PayPal](https://www.wc-donation.com/documentation/integrations/express-donations-apple-pay-google-pay-paypal) integration for swift contributions.
 * 🔄 **Recurring Donations**: Secure reliable funding with subscription options tailored to donors.
 * 🧾 **Automated Donation Receipts**: Generate receipts hassle-free, improving transparency.
 * 📜 **Thank You Certificates**: Personalized certificates for donors, acknowledging their support.
-* 🏆 **Donation Leaderboard**: Showcase top donors with a [donor wall](https://wcdp.jonh.eu/documentation/usage/donation-leaderboard/), recognizing and motivating generous contributions.
+* 🏆 **Donation Leaderboard**: Showcase top donors with a [donor wall](https://www.wc-donation.com/documentation/usage/donation-leaderboard/), recognizing and motivating generous contributions.
 * 💰 **Fee Recovery Options**: Empower donors to cover transaction costs, maximizing contributions.
 * 🔄 **Unlimited Integrations**: Seamlessly integrate with CRM, Marketing & Analytics tools for comprehensive insights.
 * 🆓 **Free & Open Source**: A no-fee solution for charities, ensuring every penny counts towards the cause.
@@ -55,16 +55,16 @@ Harness the power of WooCommerce for online fundraising, crowdfunding, and donor
 
 === Links ===
 
-* [Overview](https://wcdp.jonh.eu/)
-* [Documentation](https://wcdp.jonh.eu/documentation/)
-* [Getting Started](https://wcdp.jonh.eu/documentation/getting-started/first-steps/)
-* [Github](https://github.com/jonas-hoebenreich/wc-donation-platform)
-* [Donation Demos](https://wcdp.jonh.eu/demos/)
-* [Demo Style 1](https://wcdp.jonh.eu/demos/demo-style-1/)
-* [Demo Style 2](https://wcdp.jonh.eu/demos/demo-style-2/)
-* [Demo Style 3](https://wcdp.jonh.eu/demos/demo-style-3/)
-* [Demo Style 4](https://wcdp.jonh.eu/demos/demo-style-4/)
-* [Demo Style 5](https://wcdp.jonh.eu/demos/demo-style-5/)
+* [Overview](https://www.wc-donation.com/)
+* [Documentation](https://www.wc-donation.com/documentation/)
+* [Getting Started](https://www.wc-donation.com/documentation/getting-started/first-steps/)
+* [Github](https://github.com/wc-donation/wc-donation-platform)
+* [Donation Demos](https://www.wc-donation.com/demos/)
+* [Demo Style 1](https://www.wc-donation.com/demos/demo-style-1/)
+* [Demo Style 2](https://www.wc-donation.com/demos/demo-style-2/)
+* [Demo Style 3](https://www.wc-donation.com/demos/demo-style-3/)
+* [Demo Style 4](https://www.wc-donation.com/demos/demo-style-4/)
+* [Demo Style 5](https://www.wc-donation.com/demos/demo-style-5/)
 
 === For whom is Donation Platform for WooCommerce suitable? ===
 
@@ -152,20 +152,60 @@ Since WooCommerce and other plugins like payment gateways don't assume that ther
 
 = How can I set up recurring donations? =
 
-To set up recurring donations, please also install Subscriptions for WooCommerce (free plugin) or WooCommerce Subscriptions (premium extension). Here you can find detailed instructions on how to set up recurring donations: [Set up recurring donations](https://wcdp.jonh.eu/documentation/integrations/recurring-donations-with-woocommerce-subscriptions/)
+To set up recurring donations, please also install Subscriptions for WooCommerce (free plugin) or WooCommerce Subscriptions (premium extension). Here you can find detailed instructions on how to set up recurring donations: [Set up recurring donations](https://www.wc-donation.com/documentation/integrations/recurring-donations-with-woocommerce-subscriptions/)
 
 = How can I generate donation receipts automatically? =
 
-WooCommerce PDF Invoices & Packing Slips is a free and open source WordPress plugin you can use to send out your tax-deductible receipts & thank you certificates. Please follow this guide to set up donation receipts: [Set up donation receipts](https://wcdp.jonh.eu/documentation/integrations/donation-receipts-with-woocommerce-pdf-invoices-packing-slips/)
+WooCommerce PDF Invoices & Packing Slips is a free and open source WordPress plugin you can use to send out your tax-deductible receipts & thank you certificates. Please follow this guide to set up donation receipts: [Set up donation receipts](https://www.wc-donation.com/documentation/integrations/donation-receipts-with-woocommerce-pdf-invoices-packing-slips/)
 
 = How can I run a normal shop in parallel with Donation Platform for WooCommerce? =
 
 If you want to disable the wording changes applied by Donation Platform for WooCommerce you can enable to compatibility mode in the plugin's settings.
 
 == Changelog ==
-Active development of Donation Platform for WooCommerce: Fundraising & Donation Management is handled [on GitHub](https://github.com/jonas-hoebenreich/wc-donation-platform/).
+Active development of Donation Platform for WooCommerce: Fundraising & Donation Management is handled [on GitHub](https://github.com/wc-donation/wc-donation-platform/).
 
-= 1.3.2 =
+= 1.3.3 =
+feat: add style 9 to progress bar shortcode (just amount raised)
+feat: option to redirect to cart instead of checkout
+feat: add fallback attribute to Leaderboard Shortcode
+tweak: automatically enable compatibility mode for websites that already have a WooCommerce shop
+tweak: make sure to disable the new product editor
+tweak: fallback id in order progress Shortcode
+chore: update supported WP version to 6.7
+chore: update supported WC version to 9.4.1
+chore: js refactored
+chore: allow progress bar in AJAX calls
+chore: npm update & upgrade
+chore: improve compatibility mode logic on plugin activation
+chore: Remove load_plugin_textdomain() call, thanks to [todeveni](https://github.com/todeveni)
+chore: update orders.php template to latest version
+chore: remove my-address.php template
+chore: update form-checkout.php template to latest version
+chore: show warning when WooCommerce Analytics is disabled
+chore: replace deprecated filter in woocommerce-pdf-invoices-packing-slips integration
+fix: improve error message when calculating Leaderboard via AJAX
+fix: theme templates being overwritten
+fix: wc_get_template invalid template
+fix: restore compatibility with PDF Invoices & Packing slips (minimum supported version of PDF Invoices & Packing slips: 3.9.0)
+fix: improve compatibility with some payment gateways
+fix: do not change add to card button for normal products on archive pages
+fix: progress bar only for donation projects
+fix: improve order autocomplete logic
+fix: untranslated string
+fix: typo in classname
+fix: make text of "fix invalid fields" banner a <p> element
+fix: style 1 of progress bar template
+fix: only allow leaderboard for donation projects
+a11y: make hidden label also aria-hidden
+dev: add anonymous_donation_checkbox_location filter
+dev: add wcdp_fee_amount filter
+dev: add wcdp_suggestion filter
+add wcdp_default_amount filter
+dev: add wcdp_clear_cache() function to clear the cache
+dev: add wcdp_progress_revenue, wcdp_progress_goal & wcdp_progress_remaining filter
+
+= 1.3.2 2024-07-09 =
 new: add [wcdp_order_counter] shortcode that allows you to display the number of orders to a product
 new: add sample language to Privacy Policy Guide page
 tweak: improved invalid nonce handling
@@ -196,7 +236,7 @@ fix: unexpected price change for shipping fee leads to errors
 fix: fix js error on booking success page
 fix: improve error messages
 
-= 1.3.1 2024-01-30 2024-01-30 =
+= 1.3.1 2024-01-30 =
 new: new progress bar styles
 new: use "current" in progress & leaderboard shortcode to use current page id
 new: donation product is added to the checkout on page load, improving compatibility with WooCommerce Gutenberg Checkout Block
@@ -216,7 +256,7 @@ new: compatibility mode: run donation platform and webshop simultaneously
 new: "delete cache" checkbox
 new: compatibility with WooCommerce API
 new: compatibility with High performance order storage
-fix: compatibility with the newest version of PDF Invoices & Packing Slips for WooCommerce, thanks to @kprovance [#40](https://github.com/jonas-hoebenreich/wc-donation-platform/issues/40)
+fix: compatibility with the newest version of PDF Invoices & Packing Slips for WooCommerce, thanks to @kprovance [#40](https://github.com/wc-donation/wc-donation-platform/issues/40)
 fix: select2 dropdown not visible within popup
 tweak: do not allow to embed donation form when using AJAX
 tweak: improve revenue cache calculation & invalidation

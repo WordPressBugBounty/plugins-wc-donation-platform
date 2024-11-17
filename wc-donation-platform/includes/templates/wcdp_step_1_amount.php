@@ -18,13 +18,13 @@ $currency_symbol = get_woocommerce_currency_symbol();
 if (isset($_REQUEST["wcdp-donation-amount"])) {
     $value_donation_amount = floatval($_REQUEST["wcdp-donation-amount"]);
 } else {
-    $value_donation_amount = $product->get_price();
+    $value_donation_amount = apply_filters('wcdp_default_amount', $product->get_price(), $product);
     if (!WCDP_Form::check_donation_amount($value_donation_amount, (int)$value['id'])) {
         $value_donation_amount = '';
     }
 }
 
-$wcdp_price_field = sprintf(get_woocommerce_price_format(), '<span class="woocommerce-Price-currencySymbol">' . $currency_symbol . '</span>', '<input type="number" class="wcdf-input-field validate-required %s" id="wcdp-donation-amount" name="wcdp-donation-amount" step="%s" min="%s" max="%s" value="%s" required>');
+$wcdp_price_field = sprintf(get_woocommerce_price_format(), '<span class="woocommerce-Price-currencySymbol">' . $currency_symbol . '</span>', '<input type="number" class="wcdp-input-field validate-required %s" id="wcdp-donation-amount" name="wcdp-donation-amount" step="%s" min="%s" max="%s" value="%s" required>');
 $wcdp_price_field = sprintf($wcdp_price_field, '%s %s', $wcdp_price_decimals, $min_donation_amount, $max_donation_amount, $value_donation_amount);
 
 if ($value['style'] != 3 && $value['style'] != 4) {
@@ -70,6 +70,7 @@ if ($value['style'] != 3 && $value['style'] != 4) {
 
             if (!is_null($suggestions)) {
                 foreach ($suggestions as $suggestion) {
+                    $suggestion = apply_filters('wcdp_suggestion', $suggestion, $product);
                     if (is_numeric($suggestion) && $suggestion > 0 && $suggestion >= $min_donation_amount && $suggestion <= $max_donation_amount) {
                         $option = array(
                             'input-id' => 'wcdp_amount_' . str_replace('.', '-', $suggestion),

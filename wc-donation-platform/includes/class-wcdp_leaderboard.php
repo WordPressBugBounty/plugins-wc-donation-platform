@@ -24,7 +24,8 @@ class WCDP_Leaderboard
 
         if (get_option("wcdp_enable_checkout_checkbox", "no") === "yes") {
             // Add checkbox to WooCommerce checkout
-            add_action('woocommerce_review_order_before_submit', array($this, 'add_anonymous_donation_checkbox'));
+            $checkbox_location = apply_filters('anonymous_donation_checkbox_location', 'woocommerce_review_order_before_submit');
+            add_action($checkbox_location, array($this, 'add_anonymous_donation_checkbox'));
 
             //Save the value of the WooCommerce checkout checkbox
             add_action('woocommerce_checkout_create_order', array($this, 'save_anonymous_donation_checkbox'));
@@ -59,9 +60,6 @@ class WCDP_Leaderboard
      */
     function wcdp_leaderboard($atts): string
     {
-        // Do not allow executing this Shortcode via AJAX
-        if (wp_doing_ajax()) return "";
-
         // Extract attributes
         $atts = shortcode_atts(array(
             'limit' => 10,
@@ -70,6 +68,7 @@ class WCDP_Leaderboard
             "style" => 1,
             "split" => -1,
             "button" => __("Show more", "wc-donation-platform"),
+            "fallback" => __('No donation to this project yet.', 'wc-donation-platform'),
         ), $atts, 'latest_orders');
 
         $atts['orderby'] = $atts['orderby'] === 'date' ? 'date' : 'total';
@@ -81,11 +80,15 @@ class WCDP_Leaderboard
         $limit = intval($atts['limit']);
         $id = (int)$atts['id'];
 
+        if ($atts['id'] !== '-1' && !WCDP_Form::is_donable($atts['id'])) {
+            return esc_html__('Donations are not activated for this project.', 'wc-donation-platform');
+        }
+
         // Get the latest orders
         $orders = $this->get_orders($id, $atts['orderby'], $limit);
 
         // Generate the HTML output
-        return $this->generate_leaderboard($orders, (int)$atts['style'], (int)$atts['split'], $atts['button']);
+        return $this->generate_leaderboard($orders, (int)$atts['style'], (int)$atts['split'], $atts['button'], $atts['fallback']);
     }
 
     /**
@@ -265,9 +268,10 @@ class WCDP_Leaderboard
      * @param int $style
      * @param int $split
      * @param string $button
+     * @param string $fallback
      * @return string
      */
-    public function generate_leaderboard(array $orders, int $style, int $split, string $button): string
+    public function generate_leaderboard(array $orders, int $style, int $split, string $button, string $fallback): string
     {
         $title = sanitize_text_field(get_option("wcdp_lb_title", __('{firstname} donated {amount}', 'wc-donation-platform')));
         $subtitle = sanitize_text_field(get_option("wcdp_lb_subtitle", "{timediff}"));
@@ -278,7 +282,7 @@ class WCDP_Leaderboard
         $id = 'wcdp_' . wp_generate_password(6, false);
 
         if (sizeof($orders) === 0) {
-            return esc_html('No donation to this project yet.', 'wc-donation-platform');
+            return esc_html($fallback);
         }
 
         $output = "<style>#" . $id . " .wcdp-leaderboard-hidden {

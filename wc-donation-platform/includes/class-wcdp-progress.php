@@ -22,6 +22,9 @@ class WCDP_Progress
 
         //update donation revenue
         add_action('woocommerce_order_status_changed', array($this, 'reset_total_revenue'), 10, 4);
+
+        //Show a warning to admins if WooCommerce analytics is disabled
+        add_action('admin_init', [$this, 'maybe_show_analytics_warning']);
     }
 
     /**
@@ -73,10 +76,6 @@ class WCDP_Progress
      */
     public function wcdp_progress(array $atts = array())
     {
-        // Do not allow executing this Shortcode via AJAX
-        if (wp_doing_ajax()) {
-            return esc_html__('This shortcode does not support AJAX calls.', 'wc-donation-platform');
-        }
         if ($atts['id'] === 'current') {
             $atts['id'] = get_the_ID();
         }
@@ -84,12 +83,15 @@ class WCDP_Progress
         if (!isset($atts['id']) || $atts['id'] <= 0) {
             return esc_html__('Invalid shortcode attribute:', 'wc-donation-platform') . ' "id"';
         }
+        if (!WCDP_Form::is_donable($atts['id'])) {
+            return esc_html__('Donations are not activated for this project.', 'wc-donation-platform');
+        }
 
         $goal_db = get_post_meta($atts['id'], 'wcdp-settings[wcdp_fundraising_goal]', true);
         $end_date_db = get_post_meta($atts['id'], 'wcdp-settings[wcdp_fundraising_end_date]', true);
 
         $atts = shortcode_atts(array(
-            'id' => 'current',
+            'id' => get_the_ID(),
             'goal' => $goal_db,
             'style' => 1,
             'addids' => '',
@@ -127,6 +129,8 @@ class WCDP_Progress
 
         // Translators: %1$s: donation amount raised, %2$s: fundraising goal
         $label = esc_html__('%1$s of %2$s', 'wc-donation-platform');
+        $revenue_formatted = apply_filters('wcdp_progress_revenue', wc_price($revenue));
+        $goal_formatted = apply_filters('wcdp_progress_goal', wc_price($atts['goal']));
 
         $template = '';
 
@@ -151,6 +155,9 @@ class WCDP_Progress
                 break;
             case 8:
                 $template = 'wcdp_progress_style_8.php';
+                break;
+            case 9:
+                $template = 'wcdp_progress_style_9.php';
                 break;
             default:
                 $template = 'wcdp_progress_style_1.php';
@@ -324,12 +331,9 @@ class WCDP_Progress
      */
     function wcdp_order_counter(array $atts = array()): string
     {
-        // Do not allow executing this Shortcode via AJAX
-        if (wp_doing_ajax()) {
-            return esc_html__('This shortcode does not support AJAX calls.', 'wc-donation-platform');
-        }
+        global $post;
         $atts = shortcode_atts(array(
-            'id' => 0,
+            'id' => $post->ID,
             // Translators: {ORDER_COUNT} will be replaced with the number of orders
             'label' => __('{ORDER_COUNT} people have already contributed to this project.', 'wc-donation-platform'),
             'fallback' => '',
@@ -353,5 +357,30 @@ class WCDP_Progress
         }
         $label = str_replace('{ORDER_COUNT}', '<span class="wcdp_order_count">' . intval($count) . '</span>', sanitize_text_field($label));
         return apply_filters('wcdp_order_counter', '<span class="wcdp_order_counter_label">' . $label . '</span>', $atts);
+    }
+
+    /**
+     * Show a warning to admins if WooCommerce analytics is disabled
+     * @return void
+     */
+    public function maybe_show_analytics_warning() {
+        if (!is_admin() || !current_user_can('manage_woocommerce') || !class_exists('WC_Admin_Notices')) {
+            return;
+        }
+
+        if (!isset($_GET['page']) || strpos('wc-', $_GET['page']) !== 0) {
+            return;
+        }
+
+        // Check if WooCommerce Analytics is disabled
+        $analytics_enabled = get_option('woocommerce_analytics_enabled', 'yes');
+        if ($analytics_enabled === 'no') {
+            $html = '<strong>'
+                . esc_html__('WooCommerce Analytics is disabled. The donation progress bar will not function correctly. Please enable it in WooCommerce settings.', 'wc-donation-platform')
+                . '</strong> <a href="https://www.wc-donation.com/documentation/troubleshooting/how-to-enable-woocommerce-analytics/" target="_blank">'
+                . esc_html__('Documentation', 'wc-donation-platform')
+                . '</a>';
+            WC_Admin_Notices::add_custom_notice('wcdp_analytics_notice', $html);
+        }
     }
 }
