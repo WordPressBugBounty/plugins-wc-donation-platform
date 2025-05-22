@@ -4,6 +4,9 @@
  *
  * @var bool $has_child
  * @var WC_product $product
+ * @var array $attributes
+ * @var int $product_id
+ * @var string $form_id
  */
 
 if (!defined('ABSPATH')) exit;
@@ -16,14 +19,14 @@ if ($has_child) : ?>
         $esc_attribute = esc_attr(sanitize_title($attribute));
 
         $terms = wc_get_product_terms(
-            $id,
+            $product_id,
             $esc_attribute,
             array(
                 'fields' => 'all',
             )
         );
 
-        $attributeLayout = get_post_meta($id, 'wcdp-settings[wcdp-attr-' . $esc_attribute . ']', true);
+        $attributeLayout = get_post_meta($product_id, 'wcdp-settings[wcdp-attr-' . $esc_attribute . ']', true);
 
         /*
          * $attributeLayout = 0: Default Layout
@@ -39,7 +42,7 @@ if ($has_child) : ?>
                 </label>
             <?php else :
                 //Display Custom HTML
-                do_action('wcdp_custom_html_' . $esc_attribute . '_' . $id);
+                do_action('wcdp_custom_html_' . $esc_attribute . '_' . $product_id);
             endif;
 
             //Display Box Layout
@@ -55,7 +58,7 @@ if ($has_child) : ?>
                     if ($product && taxonomy_exists($attribute)) {
                         // Get terms if this is a taxonomy - ordered. We need the names too.
                         $terms = wc_get_product_terms(
-                            $id,
+                            $product_id,
                             $attribute,
                             array(
                                 'fields' => 'all',
@@ -82,7 +85,7 @@ if ($has_child) : ?>
                     }
                 }
 
-                echo WCDP_Form::wcdp_generate_fieldset($args, $product);
+                echo WCDP_Form::wcdp_generate_fieldset($args, $product, $form_id);
             endif;
             ?>
 
@@ -115,16 +118,17 @@ if ($has_child) : ?>
     );
     $ids = $product->get_children('edit');
     foreach ($ids as $id) {
-        $products = wc_get_product($id);
-        if ($products && $products->is_purchasable() && WCDP_Form::is_donable($id)) {
+        $productChild = wc_get_product($id);
+        if ($productChild && $productChild->is_purchasable() && WCDP_Form::is_donable($id) && (is_a($productChild, 'WC_Product_Simple') || is_a($productChild, 'WC_Product_Subscription') )) {
             $args['options'][] = array(
                 'input-id' => 'wcdp_value_' . $id,
                 'input-value' => $id,
-                'label-text' => esc_html($products->get_title()),
+                'label-text' => esc_html($productChild->get_title()),
             );
         }
-    } ?>
+    }
+    ?>
     <div class="wcdp-product-choice wcdp-row">
-        <?php echo WCDP_Form::wcdp_generate_fieldset($args); ?>
+        <?php echo WCDP_Form::wcdp_generate_fieldset($args, null, $form_id); ?>
     </div>
 <?php endif; ?>

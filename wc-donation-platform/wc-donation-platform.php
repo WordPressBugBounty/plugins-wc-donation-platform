@@ -4,7 +4,7 @@
  * Plugin URI: https://www.wc-donation.com/
  * Description: Donation Platform for WooCommerce unlocks the power of WooCommerce for your online fundraising & crowdfunding.
  * Author: Jonas Höbenreich
- * Version: 1.3.3
+ * Version: 1.3.4
  * Author URI: https://www.jonh.eu/
  * Plugin URI:  https://www.wc-donation.com/
  * License: GNU General Public License v2.0
@@ -12,7 +12,7 @@
  * Text Domain: wc-donation-platform
  * Domain Path: /languages
  * WC requires at least: 4.0.0
- * WC tested up to: 9.4.1
+ * WC tested up to: 9.8.5
  * Requires at least: 5.8
  */
 
@@ -21,7 +21,7 @@ if (!defined('ABSPATH'))
 
 define('WCDP_DIR', dirname(__FILE__) . '/');
 define('WCDP_DIR_URL', plugin_dir_url(__FILE__));
-const WCDP_VERSION = '1.3.3';
+const WCDP_VERSION = '1.3.4';
 
 /**
  * Check if WooCommerce is active
@@ -216,12 +216,20 @@ register_activation_hook( __FILE__,
     add_option('wcdp_compatibility_mode', 'yes');
 });
 
-/**
- * Clear Donation Platform for WooCommerce Cache
- *
- * @return void
- * @since v1.3.3
- */
-function wcdp_clear_cache() {
-    WCDP_General_Settings::clear_cached_data();
+if (!function_exists('wcdp_clear_cache')) {
+    /**
+     * Clear Donation Platform for WooCommerce Cache
+     *
+     * @return void
+     * @since v1.3.3
+     */
+    function wcdp_clear_cache() {
+        if (class_exists('WCDP_General_Settings')) {
+            WCDP_General_Settings::clear_cached_data();
+        } else {
+            add_action('init', function () {
+                WCDP_General_Settings::clear_cached_data();
+            });
+        }
+    }
 }

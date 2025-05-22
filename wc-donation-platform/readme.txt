@@ -3,8 +3,8 @@ Contributors: flinnn
 Tags: donation, fundraising, charity, woocommerce donation, recurring donation
 Donate link: https://www.wc-donation.com/documentation/support/contact/
 Requires at least: 5.8
-Tested up to: 6.7
-Stable tag: 1.3.3
+Tested up to: 6.8
+Stable tag: 1.3.4
 Requires PHP: 7.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -165,7 +165,51 @@ If you want to disable the wording changes applied by Donation Platform for WooC
 == Changelog ==
 Active development of Donation Platform for WooCommerce: Fundraising & Donation Management is handled [on GitHub](https://github.com/wc-donation/wc-donation-platform/).
 
-= 1.3.3 =
+= 1.3.4 =
+**Minor Breaking Changes:**:
+- The Anonymous / Public checkbox now requires you to define a headline for both the checked and unchecked states.
+- Some element IDs have been changed in this version, which may affect any custom CSS you've applied to your site.
+- The addids parameter for the progress bar will now only take donable products into account.
+
+feat: new style 10 to progress shortcode (percentage raised)
+feat: percentage_decimals attribute to progress shortcode
+feat: enable anonymous donation checkbox even when compatibility mode is enabled
+fix: fee recovery checkbox not being applied
+fix: make $product variable global to avoid issues with some payment gateways
+fix: make sure order_counter only works for donation projects
+fix: make sure progress bar only works for donation projects
+fix: improve ajax error message within Elementor editor
+fix: fix outdated links
+fix/dev: fix wcdp_clear_cache() function throwing errors when called too early
+fix: PayPal express checkout not working properly
+fix: fix _load_textdomain_just_in_time called incorrectly notice
+fix: Leaderboard not using the correct timezone
+fix: improve grouped product error handling
+fix: only allow simple products in grouped product donation form
+fix: button CSS overwriting theme styles
+tweak: improve WooCommerce Analytics disabled error message
+tweak: make Cache clearing functionality more intuitive
+tweak: Show/Hide Leaderboard input fields depending on settings
+tweak: only show anonymous donation checkbox when cart contains a donation
+tweak: preselect minimum amount for variable products
+tweak: the addids parameter for the progress bar will now only take donable products into account
+chore: switch to using wc_get_template() function
+chore: use wc_price for amount suggestions
+chore: improve footer text
+chore: refactor fee recovery code
+chore: improve general settings page
+chore: clean up $goal_db & $goal_user variables
+chore: add missing file comments
+chore: refactor $percentage & $width in progress bar
+chore: set supported WC version to 9.8.5
+chore: use wp_unique_id for leaderboard id
+chore: set supported/tested WP version to 6.8
+chore: upgrade dependencies
+dev: `wcdp_skip_nonce_validation` filter that allows users to disable add2cart nonce verification
+dev: `wcdp_sort_order` filter to update the donation amount suggestion order
+dev: add wcdp_force_recalculate_total_revenue filter
+
+= 1.3.3 2024-11-17 =
 feat: add style 9 to progress bar shortcode (just amount raised)
 feat: option to redirect to cart instead of checkout
 feat: add fallback attribute to Leaderboard Shortcode
@@ -201,7 +245,7 @@ a11y: make hidden label also aria-hidden
 dev: add anonymous_donation_checkbox_location filter
 dev: add wcdp_fee_amount filter
 dev: add wcdp_suggestion filter
-add wcdp_default_amount filter
+dev: add wcdp_default_amount filter
 dev: add wcdp_clear_cache() function to clear the cache
 dev: add wcdp_progress_revenue, wcdp_progress_goal & wcdp_progress_remaining filter
 

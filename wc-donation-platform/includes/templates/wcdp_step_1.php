@@ -5,6 +5,8 @@
  * @var bool $has_child
  * @var $product
  * @var array $value
+ * @var string $context
+ * @var string $form_id
  */
 
 if (!defined('ABSPATH')) exit;
@@ -70,7 +72,7 @@ do_action('woocommerce_before_add_to_cart_form');
         echo ' target="_blank"';
     }
     ?>
-          autocomplete="off" enctype='multipart/form-data' data-product_id="<?php echo $value['id']; ?>"
+          autocomplete="off" enctype='multipart/form-data' data-product_id="<?php echo $value['id']; ?>" data-formid="<?php echo $form_id; ?>"
         <?php if ($has_child): ?>
             data-product_variations="<?php echo $variations_attr; ?>"
         <?php endif; ?>
@@ -79,16 +81,32 @@ do_action('woocommerce_before_add_to_cart_form');
         <input type="hidden" name="action" value="wcdp_ajax_donation_calculation">
         <input type="hidden" name="security" value="<?php echo wp_create_nonce('wcdp_ajax_nonce' . $value['id']); ?>">
         <input type="hidden" name="postid" value="<?php echo $value['id'] ?>">
+        <input type="hidden" name="wcdp_form_id" value="<?php echo $form_id ?>">
 
         <?php
         //Donation Amount section
-        include('wcdp_step_1_amount.php');
+        wc_get_template('wcdp_step_1_amount.php',
+            array(
+                'min_donation_amount'=> $min_donation_amount,
+                'max_donation_amount' => $max_donation_amount,
+                'product_id' => $product_id,
+                'product' => $product,
+                'value' => $value,
+                'form_id' => $form_id,
+            ), '', WCDP_DIR . 'includes/templates/');
 
         //Variation fields
-        include('wcdp_step_1_variations.php');
+        wc_get_template('wcdp_step_1_variations.php',
+            array(
+                'has_child' => $has_child,
+                'product' => $product,
+                'attributes' => $attributes ?? [],
+                'product_id' => $product_id,
+                'form_id' => $form_id,
+            ), '', WCDP_DIR . 'includes/templates/');
         ?>
         <?php if ($value['style'] == 1 || $value['style'] == 3 || $value['style'] == 5) : ?>
-            <button class="button wcdp-button wcdp-right" type="button" id="wcdp-ajax-button" value="2">
+            <button class="button wcdp-button wcdp-right" type="button" id="wcdp-ajax-button" data-step="2">
                 <?php echo apply_filters('wcdp_next_button', esc_html__('Next', 'wc-donation-platform'), $value['id'], 1); ?>
                 &nbsp;<div class="wcdp-arrow wcdp-right-arrow">&raquo;</div>
             </button>
@@ -112,7 +130,6 @@ do_action('woocommerce_before_add_to_cart_form');
         <?php
         /** @var bool $context */
         if ($value['style'] == 4 && $context == 'product-page') {
-            echo '<input class="wcdp-express-amount" style="display:none !important;" type="number" step="any" name="attribute_wcdp_donation_amount" value="1">';
             do_action('wcdp_express_checkout_heading');
             do_action('woocommerce_after_add_to_cart_quantity');
         }

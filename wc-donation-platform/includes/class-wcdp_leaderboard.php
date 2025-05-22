@@ -22,17 +22,15 @@ class WCDP_Leaderboard
         //Delete cache on order change
         add_action('woocommerce_order_status_changed', array($this, 'delete_old_latest_orders_cache'), 10, 4);
 
-        if (get_option("wcdp_enable_checkout_checkbox", "no") === "yes") {
-            // Add checkbox to WooCommerce checkout
-            $checkbox_location = apply_filters('anonymous_donation_checkbox_location', 'woocommerce_review_order_before_submit');
-            add_action($checkbox_location, array($this, 'add_anonymous_donation_checkbox'));
+        // Add checkbox to WooCommerce checkout
+        $checkbox_location = apply_filters('anonymous_donation_checkbox_location', 'woocommerce_review_order_before_submit');
+        add_action($checkbox_location, array($this, 'add_anonymous_donation_checkbox'));
 
-            //Save the value of the WooCommerce checkout checkbox
-            add_action('woocommerce_checkout_create_order', array($this, 'save_anonymous_donation_checkbox'));
+        //Save the value of the WooCommerce checkout checkbox
+        add_action('woocommerce_checkout_create_order', array($this, 'save_anonymous_donation_checkbox'));
 
-            //Display the value of the WooCommerce checkout checkbox to the user
-            add_action('woocommerce_order_details_after_customer_details', array($this, 'display_anonymous_donation_checkbox_in_order_details'));
-        }
+        //Display the value of the WooCommerce checkout checkbox to the user
+        add_action('woocommerce_order_details_after_customer_details', array($this, 'display_anonymous_donation_checkbox_in_order_details'));
     }
 
     /**
@@ -273,13 +271,14 @@ class WCDP_Leaderboard
      */
     public function generate_leaderboard(array $orders, int $style, int $split, string $button, string $fallback): string
     {
+        $checkout_checkbox_enabled = get_option("wcdp_enable_checkout_checkbox", "yes") === "yes";
         $title = sanitize_text_field(get_option("wcdp_lb_title", __('{firstname} donated {amount}', 'wc-donation-platform')));
         $subtitle = sanitize_text_field(get_option("wcdp_lb_subtitle", "{timediff}"));
         $title_checked = sanitize_text_field(get_option("wcdp_lb_title_checked", ""));
         $title_unchecked = sanitize_text_field(get_option("wcdp_lb_title_unchecked", ""));
         $subtitle_checked = sanitize_text_field(get_option("wcdp_lb_subtitle_checked", ""));
         $subtitle_unchecked = sanitize_text_field(get_option("wcdp_lb_subtitle_unchecked", ""));
-        $id = 'wcdp_' . wp_generate_password(6, false);
+        $id = wp_unique_id('wcdp_');
 
         if (sizeof($orders) === 0) {
             return esc_html($fallback);
@@ -295,10 +294,13 @@ class WCDP_Leaderboard
             $output .= $this->get_css_style_2($id);
         }
         $hideClass = '';
+        $timezone = wp_timezone();
         foreach ($orders as $pos => $order) {
             if ($pos === $split) {
                 $hideClass = ' wcdp-leaderboard-hidden';
             }
+            $datetime = (new DateTime())->setTimestamp($order['date'])->setTimezone($timezone);
+
             $placeholders = array(
                 '{firstname}' => "<span class='wcdp-leaderboard-firstname'>" . wp_strip_all_tags($order['first']) . "</span>",
                 '{firstname_initial}' => "<span class='wcdp-leaderboard-firstname_initial'>" . wp_strip_all_tags($this->get_initials($order['first'])) . "</span>",
@@ -308,8 +310,8 @@ class WCDP_Leaderboard
                 '{company_or_name}' => "<span class='wcdp-leaderboard-company_or_name'>" . $this->get_company_or_name($order['co'], $order['first'], $order['last']) . "</span>",
                 '{amount}' => "<span class='wcdp-leaderboard-amount'>" . wc_price($order['total'], array('currency' => $order['cy'],)) . "</span>",
                 '{timediff}' => "<span class='wcdp-leaderboard-timediff'>" . $this->get_human_time_diff($order['date']) . "</span>",
-                '{datetime}' => "<span class='wcdp-leaderboard-datetime'>" . date_i18n(get_option('date_format') . ' ' . get_option('time_format'), $order['date']) . "</span>",
-                '{date}' => "<span class='wcdp-leaderboard-date'>" . date_i18n(get_option('date_format'), $order['date']) . "</span>",
+                '{datetime}' => "<span class='wcdp-leaderboard-datetime'>" . $datetime->format(get_option('date_format') . ' ' . get_option('time_format')) . "</span>",
+                '{date}' => "<span class='wcdp-leaderboard-date'>" . $datetime->format(get_option('date_format')) . "</span>",
                 '{city}' => "<span class='wcdp-leaderboard-city'>" . wp_strip_all_tags($order['city']) . "</span>",
                 '{country}' => "<span class='wcdp-leaderboard-country'>" . WC()->countries->countries[esc_attr($order['country'])] . "</span>",
                 '{country_code}' => "<span class='wcdp-leaderboard-country_code'>" . wp_strip_all_tags($order['country']) . "</span>",
@@ -320,19 +322,19 @@ class WCDP_Leaderboard
             );
 
             $output .= '<li class="wcdp-leaderboard-li' . $hideClass . '"><div>';
-            if ($title_checked !== "" && $order['chk'] == 1) {
+            if ($checkout_checkbox_enabled && $title_checked !== "" && $order['chk'] == 1) {
                 $output .= '<span class="wcdp-leaderboard-title wcdp-leaderboard-checked-title">' . strtr($title_checked, $placeholders) . '</span><br>';
-            } else if ($title_unchecked !== "" && $order['chk'] == 0) {
+            } else if ($checkout_checkbox_enabled && $title_unchecked !== "" && $order['chk'] == 0) {
                 $output .= '<span class="wcdp-leaderboard-title wcdp-leaderboard-unchecked-title">' . strtr($title_unchecked, $placeholders) . '</span><br>';
-            } else if ($title != "") {
+            } else if (!$checkout_checkbox_enabled && $title != "") {
                 $output .= '<span class="wcdp-leaderboard-title wcdp-leaderboard-default-title">' . strtr($title, $placeholders) . '</span><br>';
             }
 
-            if ($subtitle_checked !== "" && $order['chk'] == 1) {
+            if ($checkout_checkbox_enabled && $subtitle_checked !== "" && $order['chk'] == 1) {
                 $output .= '<span class="wcdp-leaderboard-subtitle wcdp-leaderboard-checked-subtitle">' . strtr($subtitle_checked, $placeholders) . '</span>';
-            } else if ($subtitle_unchecked !== "" && $order['chk'] == 0) {
+            } else if ($checkout_checkbox_enabled && $subtitle_unchecked !== "" && $order['chk'] == 0) {
                 $output .= '<span class="wcdp-leaderboard-subtitle wcdp-leaderboard-unchecked-subtitle">' . strtr($subtitle_unchecked, $placeholders) . '</span>';
-            } else if ($subtitle != "") {
+            } else if (!$checkout_checkbox_enabled && $subtitle != "") {
                 $output .= '<span class="wcdp-leaderboard-subtitle wcdp-leaderboard-default-subtitle">' . strtr($subtitle, $placeholders) . '</span>';
             }
             $output .= '</div></li>';
@@ -538,11 +540,14 @@ class WCDP_Leaderboard
     }
 
     /**
-     * Add a "anonymous donation" checkbox to the checkout
+     * Add an "anonymous donation" checkbox to the checkout
      * @return void
      */
     public function add_anonymous_donation_checkbox()
     {
+        if (!WCDP_Form::cart_contains_donation()) {
+            return;
+        }
         echo '<div class="anonymous-donation-checkbox">';
         woocommerce_form_field('wcdp_checkout_checkbox', array(
             'type' => 'checkbox',
@@ -559,6 +564,9 @@ class WCDP_Leaderboard
      */
     public function save_anonymous_donation_checkbox($order)
     {
+        if (!WCDP_Form::order_contains_donation($order)) {
+            return;
+        }
         if (isset($_POST['wcdp_checkout_checkbox']) && $_POST['wcdp_checkout_checkbox'] == 1) {
             $order->update_meta_data('wcdp_checkout_checkbox', 'yes');
         } else {
@@ -573,14 +581,18 @@ class WCDP_Leaderboard
      */
     public function display_anonymous_donation_checkbox_in_order_details($order)
     {
-        $checkbox_value = $order->get_meta('wcdp_checkout_checkbox');
-        $e = '<p><strong>' . get_option("wcdp_checkout_checkbox_text", __('Do not show my name in the leaderboard', 'wc-donation-platform')) . ':</strong> ';
-        if ($checkbox_value === "yes") {
-            $e .= __('Yes', 'wc-donation-platform');
-        } else {
-            $e .= __('No', 'wc-donation-platform');
+        if (!WCDP_Form::order_contains_donation($order)) {
+            return;
         }
-        $e .= '</p>';
-        echo wp_kses_post($e) ;
+
+        $checkbox_value = $order->get_meta('wcdp_checkout_checkbox');
+
+        if ($checkbox_value === null || $checkbox_value === '') return;
+
+        echo wp_kses_post(sprintf(
+            '<p><strong>%s:</strong> %s</p>',
+            esc_html(get_option("wcdp_checkout_checkbox_text", __('Do not show my name in the leaderboard', 'wc-donation-platform'))),
+            esc_html($checkbox_value === "yes" ? __('Yes', 'wc-donation-platform') : __('No', 'wc-donation-platform'))
+        ));
     }
 }

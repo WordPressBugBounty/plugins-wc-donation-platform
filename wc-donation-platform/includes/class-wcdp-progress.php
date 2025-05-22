@@ -62,7 +62,7 @@ class WCDP_Progress
             $revenue = get_post_meta($item->get_product_id(), 'wcdp_total_revenue');
             //Delete the outdated total revenue meta
             //If the orderid is smaller than 10000 it assumes that the page does not receive many donations
-            if ($revenue && ($orderid <= 10000 || time() - $revenue[0]['time'] > 30)) {
+            if ($revenue && ($orderid <= 10000 || time() - $revenue[0]['time'] > 30) && !apply_filters('wcdp_force_recalculate_total_revenue', false, $item, $revenue)) {
                 delete_post_meta($item->get_product_id(), 'wcdp_total_revenue');
             }
             delete_transient('wcdp_order_counter_' . $item->get_product_id() );
@@ -96,6 +96,7 @@ class WCDP_Progress
             'style' => 1,
             'addids' => '',
             'cheat' => 0,
+            'percentage_decimals' => 0,
         ), $atts);
 
         if (!is_numeric($atts['goal'])) {
@@ -109,30 +110,30 @@ class WCDP_Progress
         //Add revenue of additional Product IDs
         $ids = explode(",", $atts['addids']);
         foreach ($ids as $id) {
-            $revenue += (float)$this->getTotalRevenueOfProduct($id);
+            if (WCDP_Form::is_donable($id)) {
+                $revenue += (float)$this->getTotalRevenueOfProduct($id);
+            }
         }
 
         //Add specified amount to revenue
         $revenue += (float)$atts['cheat'];
-
         $revenue = apply_filters('wcdp_progress_revenue', $revenue, $atts);
 
         if ((float)$atts['goal'] != 0) {
-            $width = ($revenue * 100) / (float)$atts['goal'];
+            $percentage = ($revenue * 100) / (float) $atts['goal'];
         } else {
-            $width = 100;
+            $percentage = 0;
         }
 
-        if ($width > 100) {
-            $width = 100;
-        }
+        $width = max(0, min(100, $percentage));
+
+        $percentage_decimals = max((int)$atts['percentage_decimals'], 0);
+        $percentage_formatted = wc_format_decimal($percentage, $percentage_decimals) . '%';
 
         // Translators: %1$s: donation amount raised, %2$s: fundraising goal
         $label = esc_html__('%1$s of %2$s', 'wc-donation-platform');
         $revenue_formatted = apply_filters('wcdp_progress_revenue', wc_price($revenue));
         $goal_formatted = apply_filters('wcdp_progress_goal', wc_price($atts['goal']));
-
-        $template = '';
 
         switch ($atts['style']) {
             case 2:
@@ -159,6 +160,9 @@ class WCDP_Progress
             case 9:
                 $template = 'wcdp_progress_style_9.php';
                 break;
+            case 10:
+                $template = 'wcdp_progress_style_10.php';
+                break;
             default:
                 $template = 'wcdp_progress_style_1.php';
         }
@@ -177,8 +181,19 @@ class WCDP_Progress
         }
     }
     <?php endif;
+        //Progress Bar template
+        wc_get_template($template,
+            array(
+                'label' => $label,
+                'revenue_formatted' => $revenue_formatted,
+                'goal_formatted' => $goal_formatted,
+                'end_date_db' => $end_date_db,
+                'width' => $width,
+                'revenue' => $revenue,
+                'goal' => (float) $atts['goal'],
+                'percentage_formatted' => $percentage_formatted,
+            ), '', WCDP_DIR . 'includes/templates/styles/progress/');
 
-        include(WCDP_DIR . 'includes/templates/styles/progress/' . $template);
         $r = ob_get_contents();
         ob_end_clean();
         return $r;
@@ -186,18 +201,22 @@ class WCDP_Progress
 
     /**
      * Return the Revenue of a Product (sum of all completed orders)
-     * @param $productid
+     * @param $product_id
      * @return float|int
      */
-    private function getTotalRevenueOfProduct($productid)
+    private function getTotalRevenueOfProduct($product_id)
     {
-        $totalrevenue = get_post_meta($productid, 'wcdp_total_revenue');
+        // only include donable projects
+        if (!WCDP_Form::is_donable($product_id)) {
+            return 0;
+        }
+        $totalrevenue = get_post_meta($product_id, 'wcdp_total_revenue');
         if ($totalrevenue === false) {
             return 0;
         }
         //Calculate revenue if not set or calculated revenue older than 21600 seconds
         if (!$totalrevenue || !isset($totalrevenue[0]) || time() - $totalrevenue[0]['time'] > 21600) {
-            return $this->updateTotalRevenueOfProduct($productid);
+            return $this->updateTotalRevenueOfProduct($product_id);
         }
 
         return (float)$totalrevenue[0]['revenue'];
@@ -205,10 +224,10 @@ class WCDP_Progress
 
     /**
      * Calculate and update the total revenue of a product
-     * @param int $productid
+     * @param int $product_id
      * @return float
      */
-    private function updateTotalRevenueOfProduct(int $productid): float
+    private function updateTotalRevenueOfProduct(int $product_id): float
     {
         global $wpdb;
         if (OrderUtil::custom_orders_table_usage_is_enabled()) {
@@ -233,15 +252,15 @@ class WCDP_Progress
                             AND l.product_id = %d;";
         }
 
-        $result = $wpdb->get_row($wpdb->prepare($query, $productid), ARRAY_A);
+        $result = $wpdb->get_row($wpdb->prepare($query, $product_id), ARRAY_A);
 
         if (!is_null($result) && isset($result['revenue'])) {
             $revenue = $result['revenue'];
         } else {
             $revenue = 0;
         }
-        $revenue = (float)apply_filters('wcdp_update_product_revenue', $revenue, $productid);
-        update_post_meta($productid, 'wcdp_total_revenue', array('revenue' => $revenue, 'time' => time()));
+        $revenue = (float)apply_filters('wcdp_update_product_revenue', $revenue, $product_id);
+        update_post_meta($product_id, 'wcdp_total_revenue', array('revenue' => $revenue, 'time' => time()));
         return $revenue;
     }
 
@@ -250,7 +269,7 @@ class WCDP_Progress
      * @param $timestamp
      * @return string
      */
-    private function get_human_time_diff($timestamp): string
+    public static function get_human_time_diff($timestamp): string
     {
         $time_diff = strtotime($timestamp) - strtotime('now');
 
@@ -344,6 +363,9 @@ class WCDP_Progress
         if ($product_id <= 0) {
             return esc_html__('Invalid shortcode attribute:', 'wc-donation-platform') . ' "id"';
         }
+        if (!WCDP_Form::is_donable($product_id)) {
+            return esc_html__('Donations are not activated for this project.', 'wc-donation-platform');
+        }
 
         $label = $atts['label'];
 
@@ -376,7 +398,7 @@ class WCDP_Progress
         $analytics_enabled = get_option('woocommerce_analytics_enabled', 'yes');
         if ($analytics_enabled === 'no') {
             $html = '<strong>'
-                . esc_html__('WooCommerce Analytics is disabled. The donation progress bar will not function correctly. Please enable it in WooCommerce settings.', 'wc-donation-platform')
+                . esc_html__('WooCommerce Analytics is disabled. The donation progress bar & Leaderboard will not function correctly. Please enable it in WooCommerce settings.', 'wc-donation-platform')
                 . '</strong> <a href="https://www.wc-donation.com/documentation/troubleshooting/how-to-enable-woocommerce-analytics/" target="_blank">'
                 . esc_html__('Documentation', 'wc-donation-platform')
                 . '</a>';

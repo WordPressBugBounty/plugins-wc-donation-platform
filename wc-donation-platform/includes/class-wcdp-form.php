@@ -35,10 +35,13 @@ class WCDP_Form
     {
         // Do not allow executing this Shortcode via AJAX
         if (wp_doing_ajax()) {
+            if (isset($_REQUEST['action']) && $_REQUEST['action'] === 'elementor_ajax' && current_user_can('edit_posts')) {
+                return esc_html__('Your donation form will be displayed here.', 'wc-donation-platform');
+            }
             return esc_html__('This shortcode does not support AJAX calls.', 'wc-donation-platform');
         }
 
-        return WCDP_Form::wcdp_donation_form($atts, 'product-page');
+        return WCDP_Form::wcdp_donation_form($atts);
     }
 
     /**
@@ -59,7 +62,7 @@ class WCDP_Form
         static $no_donation_form_yet = true;
 
         //Only one donation form per page
-        if ((!$no_donation_form_yet || (!$context == 'product-page' && is_product())) && apply_filters("wcdp_only_one_form_allowed", true)) {
+        if ((!$no_donation_form_yet || ($context !== 'product-page' && is_product())) && apply_filters("wcdp_only_one_form_allowed", true)) {
             return '<p class="wcdp-error-message">' . esc_html__('Only one donation form per page allowed', 'wc-donation-platform') . '</p>';
         }
         $no_donation_form_yet = false;
@@ -67,6 +70,11 @@ class WCDP_Form
             define('WCDP_FORM', true);
         }
 
+        return WCDP_FORM::render_donation_form($value, $context);
+    }
+
+    static function render_donation_form(array $value, $context = 'shortcode'): string
+    {
         $value = shortcode_atts(array(
             'id' => 0,
             'style' => 1,
@@ -79,10 +87,9 @@ class WCDP_Form
             'className' => '',
             'label' => __("Donate now!", "wc-donation-platform")
         ), $value);
-        $product_id = $value['id'];
 
+        $product_id = (int) $value['id'];
         $checkout = WC()->checkout();
-        $id = intval($value['id']);
 
         ob_start();
 
@@ -93,8 +100,9 @@ class WCDP_Form
             echo '</li></ul>';
             wc_get_template('myaccount/form-login.php');
         } else {
-            $product = wc_get_product($id);
+            global $product;
 
+            $product = wc_get_product($product_id);
             if (!isset(WC()->cart)) {
                 WCDP_Form::form_error_message(__('In the current view, the donation form is not available.', 'wc-donation-platform'));
             } else if (!$product || !is_a($product, 'WC_Product')) {
@@ -103,6 +111,8 @@ class WCDP_Form
                 WCDP_Form::form_error_message(__('Currently you can not donate to this project.', 'wc-donation-platform'));
             } else if (!$product->is_in_stock()) {
                 WCDP_Form::form_error_message(__('This project is currently not available.', 'wc-donation-platform'));
+            } else if (!WCDP_Form::check_grouped_product($product)) {
+                WCDP_Form::form_error_message(__('This grouped product has no available child products.', 'wc-donation-platform'));
             } else {
                 $has_child = is_a($product, 'WC_Product_Variable') && $product->has_child();
 
@@ -111,8 +121,16 @@ class WCDP_Form
                     wp_enqueue_script('wc-add-to-cart-variation');
                 }
 
-                WCDP_Form::wcdp_enqueue_scripts();
-                require_once 'templates/wcdp_form.php';
+                WCDP_Form::wcdp_enqueue_scripts($value['style'] !== 4);
+                wc_get_template('wcdp_form.php',
+                    array(
+                        'value' => $value,
+                        'product' => $product,
+                        'context' => $context,
+                        'product_id' => $product_id,
+                        'has_child' => $has_child,
+                        'checkout' => $checkout,
+                    ), '', WCDP_DIR . 'includes/templates/');
             }
         }
 
@@ -123,19 +141,35 @@ class WCDP_Form
             return $r;
         }
 
+        // Case: Popup Donation Form
         add_action('wp_footer', function () use ($r) {
             echo $r;
         });
-        if ($value['button']) {
-            return '<p>
-                <a href="#wcdp-form">
-                    <button id="wcdp-button" type="button" class="button wcdp-modal-open">'
-                . esc_html($value['label']) .
-                '</button>
-                </a>
-            </p>';
+        if (!$value['button']) {
+            return '';
         }
-        return '';
+
+        return '<p>
+            <a href="#wcdp-form">
+                <button type="button" class="button wcdp-modal-open wcdp-button">'
+            . esc_html($value['label']) .
+            '</button>
+            </a>
+        </p>';
+    }
+
+    private static function check_grouped_product($product) {
+        if (!is_a($product, 'WC_Product_Grouped')) {
+            return true;
+        }
+        $ids = $product->get_children('vier');
+        foreach ($ids as $id) {
+            $productChild = wc_get_product($id);
+            if ($productChild && $productChild->is_purchasable() && WCDP_Form::is_donable($id) && (is_a($productChild, 'WC_Product_Simple') || is_a($productChild, 'WC_Product_Subscription') )) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -160,7 +194,7 @@ class WCDP_Form
      * Enqueue CSS & JS Files
      * @return void
      */
-    private static function wcdp_enqueue_scripts()
+    private static function wcdp_enqueue_scripts($is_checkout = true)
     {
         //Dependencies
         $cssdeps = array(
@@ -175,10 +209,15 @@ class WCDP_Form
             'wc-donation-platform',
             'jquery',
             'selectWoo',
-            'wc-checkout',
             'select2',
             'wc-cart',
         );
+
+        // style 4 only renders an add2cart form
+        if ($is_checkout) {
+            $jsdeps[] = 'wc-checkout';
+        }
+
         //Require wc-password-strength-meter when necessary
         if ('yes' === get_option('woocommerce_enable_signup_and_login_from_checkout') && 'no' === get_option('woocommerce_registration_generate_password') && !is_user_logged_in()) {
             $jsdeps[] = 'wc-password-strength-meter';
@@ -205,12 +244,28 @@ class WCDP_Form
     }
 
     /**
+     * Return true if the order contains a donation product
+     * @param WC_Order $order
+     * @return bool
+     */
+    public static function order_contains_donation(WC_Order $order): bool
+    {
+        foreach ($order->get_items() as $item) {
+            if (isset($item['product_id']) && WCDP_Form::is_donable($item['product_id'])) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * returns the HTML markup of a fieldset
-     * @param $args
-     * @param $product
+     * @param array $args
+     * @param null $product
+     * @param string $form_id
      * @return mixed|null
      */
-    public static function wcdp_generate_fieldset($args = array(), $product = null)
+    public static function wcdp_generate_fieldset(array $args = array(), $product = null, string $form_id = "")
     {
         $args = wp_parse_args(
             apply_filters('wcdp_generate_fieldset_args', $args),
@@ -268,17 +323,22 @@ class WCDP_Form
             ));
         }
 
-        $html = '<ul id="' . esc_attr($args['ul-id']) . '" class="' . esc_attr($args['ul-class']) . '" wcdp-name="' . esc_attr($args['name']) . '"> ';
+        $input_name = esc_attr($args['name']);
+
+        $ul_id = $args['ul-id'] !== '' ? esc_attr($form_id . $args['ul-id']) : '';
+        $html = '<ul id="' . $ul_id . '" class="' . esc_attr($args['ul-class']) . '" data-name="' . $input_name . '"> ';
         foreach ($options as $option) {
-            $html .= '<li><input type="radio" id="' . esc_attr($option['input-id']) . '" name="' . esc_attr($args['name']) . '" class="' . esc_attr($option['input-class']) . '" value="' . esc_attr($option['input-value']) . '"';
+            $html .= '<li><input type="radio" id="' . $form_id . esc_attr($option['input-id']) . '" name="' . $input_name . '" class="' . esc_attr($option['input-class']) . '" value="' . esc_attr($option['input-value']) . '"';
             if ($option['input-checked']
-                || (isset($_REQUEST[esc_attr($args['name'])]) && $_REQUEST[esc_attr($args['name'])] == esc_attr($option['input-value']))
+                || (isset($_REQUEST['attribute_' . esc_attr($args['name'])]) && $_REQUEST['attribute_' . esc_attr($args['name'])] == esc_attr($option['input-value']))
                 || (!isset($_REQUEST[esc_attr($args['name'])]) && !is_null($product) && $product->get_variation_default_attribute(esc_attr($args['name'])) == esc_attr($option['input-value']))
+                || (isset($_REQUEST['wcdp_products']) && $_REQUEST['wcdp_products'] == esc_attr($option['input-value']))
             ) {
                 $html .= ' checked="checked"';
             }
             $html .= ' required>';
-            $html .= '<label id="' . esc_attr($option['label-id']) . '" class="' . esc_attr($option['label-class']) . '" for="' . esc_attr($option['input-id']) . '">';
+            $label_id = $option['label-id'] !== '' ? esc_attr($form_id . $option['label-id']) : '';
+            $html .= '<label id="' . $label_id . '" class="' . esc_attr($option['label-class']) . '" for="' . $form_id . esc_attr($option['input-id']) . '">';
             $html .= wp_kses(apply_filters('wcdp_label_' . esc_attr($option['input-value']), $option['label-text'], $args), $allowed_html);
             $html .= '</label></li>';
         }
@@ -423,7 +483,7 @@ class WCDP_Form
             return;
         }
         $nonce = $_REQUEST["security"] ?? null;
-        if (wp_verify_nonce($nonce, 'wcdp_ajax_nonce' . sanitize_key($_REQUEST['postid']))) {
+        if (wp_verify_nonce($nonce, 'wcdp_ajax_nonce' . sanitize_key($_REQUEST['postid'])) && !apply_filters('wcdp_skip_nonce_validation', false)) {
             $this->wcdp_add_to_cart();
         }
     }
@@ -440,7 +500,7 @@ class WCDP_Form
             'reload' => true,
         );
 
-        if (!isset($_REQUEST['postid']) || !isset($_REQUEST['wcdp-donation-amount'])) {
+        if (!isset($_REQUEST['postid']) || !isset($_REQUEST['wcdp-donation-amount']) || !isset($_REQUEST['wcdp_form_id'])) {
             $response['message'] = esc_html__('Invalid request. Please reload the page and try again. If the problem persists, please contact our support team.', 'wc-donation-platform');
             return $response;
         }
@@ -472,14 +532,14 @@ class WCDP_Form
         if (isset($_REQUEST['variation_id'])) {
             $variation_id = absint($_REQUEST['variation_id']);
             foreach ($_REQUEST as $key => $value) {
-                if (substr($key, 0, 10) === 'attribute_') {
+                if (str_starts_with($key, 'attribute_') && $key !== 'attribute_wcdp_donation_amount') {
                     $variation[sanitize_text_field($key)] = sanitize_text_field($value);
                 }
             }
         }
 
         $wcdp_donation_amount = sanitize_text_field($_REQUEST['wcdp-donation-amount']);
-        if (!$this->check_donation_amount($wcdp_donation_amount, (int)$product_id) || !isset(WC()->cart)) {
+        if (!$this->check_donation_amount($wcdp_donation_amount, $product_id) || !isset(WC()->cart)) {
             $response['message'] = esc_html__('Invalid donation amount. Please enter a different donation amount.', 'wc-donation-platform');
             $response['reload'] = false;
             return $response;
@@ -541,7 +601,7 @@ class WCDP_Form
         $newParams = false;
         if (!isset($_REQUEST['postid'])) {
             $message = esc_html__('Invalid Request: postid missing. Please reload the page and try again. If the problem persists, please contact our support team.', 'wc-donation-platform');
-        } else if (false === check_ajax_referer('wcdp_ajax_nonce' . sanitize_key($_REQUEST['postid']), 'security', false)) {
+        } else if (false === check_ajax_referer('wcdp_ajax_nonce' . sanitize_key($_REQUEST['postid']), 'security', false) && !apply_filters('wcdp_skip_nonce_validation', false)) {
             $message = esc_html__('Error: invalid nonce. Please reload the page and try again. If the problem persists, please contact our support team.', 'wc-donation-platform');
             $newParams = array(
                 'nocache' => 'true',
@@ -563,6 +623,22 @@ class WCDP_Form
             'reload' => true,
             'newParams' => $newParams,
         ));
+    }
+
+    /**
+     * Get default price for variable & simple products
+     * @param WC_Product $product
+     * @return string|null
+     */
+    public static function get_default_price(WC_Product $product): ?string
+    {
+        if ( $product->is_type( 'variable' ) ) {
+            // Variable product: get min variation price
+            return $product->get_variation_price( 'min', true );
+        } else {
+            // Simple or other product types: get the regular price
+            return $product->get_price();
+        }
     }
 }
 

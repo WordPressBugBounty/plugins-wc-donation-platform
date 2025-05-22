@@ -11,7 +11,15 @@ if (!($page_id && is_page($page_id))) {
 }
 ?>
 <div class="wcdp-body">
-    <?php include(WCDP_DIR . 'includes/templates/wcdp_step_1.php'); ?>
+    <?php wc_get_template('wcdp_step_1.php',
+        array(
+            'product_id'=> $product_id,
+            'has_child' => $has_child,
+            'product' => $product,
+            'value' => $value,
+            'context' => $context,
+            'form_id' => $form_id,
+        ), '', WCDP_DIR . 'includes/templates/'); ?>
     <svg class="wcdp-divider-arrow" width="90%" height="100%" viewBox="0 0 113 4" version="1.1"
          xmlns="http://www.w3.org/2000/svg" xml:space="preserve"
          style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;"><rect id="export" x="0"

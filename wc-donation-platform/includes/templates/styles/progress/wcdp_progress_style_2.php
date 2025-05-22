@@ -1,4 +1,16 @@
 <?php
+/**
+ * Progress bar template style 2
+ * /includes/templates/styles/progress/wcdp_progress_style_2.php
+ *
+ * @var string $label
+ * @var string $revenue_formatted
+ * @var string $goal_formatted
+ * @var float $goal
+ * @var string $end_date_db
+ * @var float $width
+ */
+
 if (!defined('ABSPATH')) exit;
 
 $label = sprintf($label, '<span class="wcdp-emphasized">' . $revenue_formatted . '</span>', '<span class="wcdp-normal">' . $goal_formatted . '</span>');
@@ -45,7 +57,7 @@ if (!defined('WCDP_PROGRESS_2')) :
 <div class="wcdp-fundraising-progress wcdp-progress-style-2">
     <div class="wcdp-progress-row">
         <?php
-        if ($goal_db != '' && $goal_db > 0) {
+        if ($goal != '' && $goal > 0) {
             ?>
             <div class="wcdp-column"> <?php
                 echo $label;
@@ -55,12 +67,12 @@ if (!defined('WCDP_PROGRESS_2')) :
         <div class="wcdp-column">
             <?php
             if ($end_date_db != '') {
-                echo $this->get_human_time_diff($end_date_db);
+                echo WCDP_Progress::get_human_time_diff($end_date_db);
             }
             ?>
         </div>
     </div>
-    <?php if ($goal_db != '' && $goal_db > 0) : ?>
+    <?php if ($goal != '' && $goal > 0) : ?>
         <div class="wcdp-progress">
             <div class="wcdp-thermometer wcdp-thermometer-bg"></div>
             <div class="wcdp-thermometer wcdp-thermometer-fg" style="width: <?php echo esc_attr($width); ?>%"></div>
