@@ -1,8 +1,8 @@
 <?php
 /**
- * Customer completed order email
+ * Customer cancelled order email
  *
- * This template can be overridden by copying it to yourtheme/woocommerce/emails/customer-completed-order.php.
+ * This template can be overridden by copying it to yourtheme/woocommerce/emails/customer-cancelled-order.php.
  *
  * HOWEVER, on occasion WooCommerce will need to update template files and you
  * (the theme developer) will need to copy the new files to your theme to
@@ -25,31 +25,27 @@ if (!defined('ABSPATH')) {
 
 $email_improvements_enabled = FeaturesUtil::feature_is_enabled('email_improvements');
 
-/*
+/**
+ * Hook: woocommerce_email_header.
+ *
  * @hooked WC_Emails::email_header() Output the email header
+ * @since 2.5.0
  */
 do_action('woocommerce_email_header', $email_heading, $email); ?>
 
-<?php echo $email_improvements_enabled ? '<div class="email-introduction">' : ''; ?>
-<p>
-	<?php
-	if (!empty($order->get_billing_first_name())) {
-		/* translators: %s: Customer first name */
-		printf(esc_html__('Hi %s,', 'woocommerce'), esc_html($order->get_billing_first_name()));
-	} else {
-		printf(esc_html__('Hi,', 'woocommerce'));
-	}
-	?>
-</p>
-<p><?php esc_html_e('We have finished processing your donation.', 'wc-donation-platform'); ?></p>
-<?php if ($email_improvements_enabled): ?>
-	<p><?php esc_html_e('Here’s a reminder of what you donated:', 'wc-donation-platform'); ?></p>
-<?php endif; ?>
+<?php
+echo $email_improvements_enabled ? '<div class="email-introduction">' : '';
+/* translators: %1$s: Order number */
+$text = __('We’re sorry to let you know that your donation #%1$s has been cancelled.', 'wc-donation-platform');
+
+?>
+<p><?php printf(esc_html($text), esc_html($order->get_order_number())); ?></p>
 <?php echo $email_improvements_enabled ? '</div>' : ''; ?>
 
 <?php
-
-/*
+/**
+ * Hook: woocommerce_email_order_details.
+ *
  * @hooked WC_Emails::order_details() Shows the order details table.
  * @hooked WC_Structured_Data::generate_order_data() Generates structured data.
  * @hooked WC_Structured_Data::output_structured_data() Outputs structured data.
@@ -57,14 +53,20 @@ do_action('woocommerce_email_header', $email_heading, $email); ?>
  */
 do_action('woocommerce_email_order_details', $order, $sent_to_admin, $plain_text, $email);
 
-/*
+/**
+ * Hook: woocommerce_email_order_meta.
+ *
  * @hooked WC_Emails::order_meta() Shows order meta data.
+ * @since 2.5.0
  */
 do_action('woocommerce_email_order_meta', $order, $sent_to_admin, $plain_text, $email);
 
-/*
+/**
+ * Hook: woocommerce_email_customer_details.
+ *
  * @hooked WC_Emails::customer_details() Shows customer details
  * @hooked WC_Emails::email_address() Shows email address
+ * @since 2.5.0
  */
 do_action('woocommerce_email_customer_details', $order, $sent_to_admin, $plain_text, $email);
 
@@ -77,7 +79,10 @@ if ($additional_content) {
 	echo $email_improvements_enabled ? '</td></tr></table>' : '';
 }
 
-/*
+/**
+ * Hook: woocommerce_email_footer.
+ *
  * @hooked WC_Emails::email_footer() Output the email footer
+ * @since 2.5.0
  */
 do_action('woocommerce_email_footer', $email);
