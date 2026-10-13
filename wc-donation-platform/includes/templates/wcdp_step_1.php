@@ -54,6 +54,7 @@ if ($value['description']) {
 }
 
 do_action('woocommerce_before_add_to_cart_form');
+do_action('wcdp_before_step_amount', $product_id, $context);
 ?>
 
 <form class="cart variations_form wcdp-choose-donation" <?php
@@ -75,13 +76,18 @@ if ($context === 'embed' && $value['style'] === 4) {
     echo ' target="_blank"';
 }
 ?> autocomplete="off" enctype='multipart/form-data'
-    data-product_id="<?php echo esc_attr($product_id); ?>" data-formid="<?php echo esc_attr($form_id); ?>" <?php if ($has_child): ?> data-product_variations="<?php echo esc_attr($variations_attr); ?>" <?php endif; ?>
-    wcdp-error-default="<?php echo esc_attr(wp_kses(__('An unexpected error occurred. Please reload the page and try again. If the problem persists, please contact our support team.', 'wc-donation-platform'), array()), ENT_QUOTES, 'UTF-8', true); ?>">
+    data-style="<?php echo esc_attr($value['style']); ?>" data-product_id="<?php echo esc_attr($product_id); ?>"
+    data-formid="<?php echo esc_attr($form_id); ?>" <?php if ($has_child): ?>
+        data-product_variations="<?php echo esc_attr($variations_attr); ?>" <?php endif; ?>>
     <input type="hidden" name="action" value="wcdp_ajax_donation_calculation">
     <input type="hidden" name="security"
         value="<?php echo esc_attr(wp_create_nonce('wcdp_ajax_nonce' . $value['id'])); ?>">
     <input type="hidden" name="postid" value="<?php echo esc_attr($value['id']); ?>">
     <input type="hidden" name="wcdp_form_id" value="<?php echo esc_attr($form_id); ?>">
+    <input type="hidden" name="wcdp_theme" value="<?php echo esc_attr($value['theme']); ?>">
+    <?php if (!empty($value['source'])): ?>
+        <input type="hidden" name="wcdp_source" value="<?php echo esc_attr($value['source']); ?>">
+    <?php endif; ?>
 
     <?php
     //Donation Amount section
@@ -113,28 +119,29 @@ if ($context === 'embed' && $value['style'] === 4) {
         WCDP_DIR . 'includes/templates/'
     );
     ?>
-    <?php if ($value['style'] == 1 || $value['style'] == 3 || $value['style'] == 5): ?>
-    <div class="button-row">
-        <button class="button wcdp-button wcdp-right" type="button" id="wcdp-ajax-button" data-step="2">
-            <?php echo apply_filters('wcdp_next_button', esc_html__('Next', 'wc-donation-platform'), $value['id'], 1); ?>
-            &nbsp;<div class="wcdp-arrow wcdp-right-arrow">&raquo;</div>
-        </button>
-        <div class="lds-ellipsis" id="wcdp-spinner">
-            <div></div>
-            <div></div>
-            <div></div>
-            <div></div>
-        </div>
-    </div>
-    <?php elseif ($value['style'] == '4'): ?>
-    <div class="button-row">
-        <button class="button wcdp-button wcdp-right" type="submit">
-            <?php echo apply_filters('wcdp_donate_label', esc_html__('Donate', 'wc-donation-platform')); ?>&nbsp;<div
-                class="wcdp-arrow wcdp-right-arrow">
-                &raquo;
+    <?php do_action('wcdp_after_step_amount', $product_id, $context); ?>
+    <?php if ($value['style'] == 1 || $value['style'] == 3 || $value['style'] == 5 || $value['style'] == 6): ?>
+        <div class="button-row">
+            <button class="button wcdp-button wcdp-right" type="button" id="wcdp-ajax-button" data-step="2">
+                <?php echo apply_filters('wcdp_next_button', esc_html__('Next', 'wc-donation-platform'), $value['id'], 1); ?>
+                &nbsp;<div class="wcdp-arrow wcdp-right-arrow">&raquo;</div>
+            </button>
+            <div class="lds-ellipsis" id="wcdp-spinner">
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
             </div>
-        </button>
-    </div>
+        </div>
+    <?php elseif ($value['style'] == '4'): ?>
+        <div class="button-row">
+            <button class="button wcdp-button wcdp-right" type="submit">
+                <?php echo apply_filters('wcdp_donate_label', esc_html__('Donate', 'wc-donation-platform')); ?>&nbsp;<div
+                    class="wcdp-arrow wcdp-right-arrow">
+                    &raquo;
+                </div>
+            </button>
+        </div>
     <?php endif; ?>
     <div class="wcdp-divider"></div>
 

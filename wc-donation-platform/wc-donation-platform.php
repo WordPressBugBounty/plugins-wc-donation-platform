@@ -4,9 +4,11 @@
  * Plugin URI: https://www.wc-donation.com/
  * Description: Donation Platform for WooCommerce unlocks the power of WooCommerce for your online fundraising & crowdfunding.
  * Author: Jonas Höbenreich
- * Version: 1.4.0
+ * Version: 1.5.0
  * Author URI: https://www.jonh.eu/
- * Plugin URI:  https://www.wc-donation.com/
+ * Plugin URI: https://www.wc-donation.com/
+ * GitHub Plugin URI: https://github.com/wc-donation/wc-donation-platform
+ * Primary Branch: main
  * License: GNU General Public License v2.0
  * License URI: http://www.gnu.org/licenses/gpl-3.0.html
  * Text Domain: wc-donation-platform
@@ -21,7 +23,7 @@ if (!defined('ABSPATH'))
 
 define('WCDP_DIR', dirname(__FILE__) . '/');
 define('WCDP_DIR_URL', plugin_dir_url(__FILE__));
-const WCDP_VERSION = '1.4.0';
+const WCDP_VERSION = '1.5.0';
 
 /**
  * Check if WooCommerce is active
@@ -56,6 +58,7 @@ if (!class_exists('WCDP')) {
             new WCDP_Form();
             new WCDP_Progress();
             new WCDP_Fee_Recovery();
+            new WCDP_Donation_Upsells();
             new WCDP_Leaderboard();
 
             new WCDP_Feedback();
@@ -89,6 +92,9 @@ if (!class_exists('WCDP')) {
             //Fee Recovery
             include_once WCDP_DIR . 'includes/class-wcdp-fee-recovery.php';
 
+            //Donation Upsells
+            include_once WCDP_DIR . 'includes/class-wcdp-donation-upsells.php';
+
             //Integration with other Extensions
             include_once WCDP_DIR . 'includes/integrations/class-wcdp-integrator.php';
 
@@ -97,6 +103,12 @@ if (!class_exists('WCDP')) {
 
             //Leaderboard
             include_once WCDP_DIR . 'includes/class-wcdp_leaderboard.php';
+
+            //Hook injection point tests (only when WCDP_ADDON_HOOK_DEBUG is defined in wp-config.php)
+            if (defined('WCDP_ADDON_HOOK_DEBUG') && WCDP_ADDON_HOOK_DEBUG) {
+                include_once WCDP_DIR . 'includes/test/class-wcdp-hook-tests.php';
+                new WCDP_Hook_Tests();
+            }
         }
 
         /**

@@ -3,8 +3,8 @@ Contributors: flinnn
 Tags: donation, fundraising, charity, woocommerce donation, recurring donation
 Donate link: https://www.wc-donation.com/documentation/support/contact/
 Requires at least: 5.8
-Tested up to: 6.9
-Stable tag: 1.4.0
+Tested up to: 7.1
+Stable tag: 1.5.0
 Requires PHP: 7.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -27,6 +27,7 @@ Unlock the potential of WooCommerce for your charity or fundraising efforts:
 * 💸 **100+ Payment Gateways**: Diverse options for lower transaction fees, enabling greater flexibility for donors.
 * 🚀 **Express Donations**: Your supporters can donate quickly using [Apple Pay](https://www.wc-donation.com/documentation/integrations/express-donations-apple-pay-google-pay-paypal/), [Google Pay](https://www.wc-donation.com/documentation/integrations/express-donations-apple-pay-google-pay-paypal/) & [PayPal](https://www.wc-donation.com/documentation/integrations/express-donations-apple-pay-google-pay-paypal/), providing a hassle-free giving experience.
 * 💰 **Fee Recovery**: Encourage donors to cover transaction costs, ensuring more funds go towards your cause.
+* 🛍️ **Donation Upsells**: Ask webshop customers on checkout to add a round-up donation or a configurable fixed + percentage donation.
 * 🏆 **Donation Leaderboard**: Showcase top donors with a [donor wall](https://www.wc-donation.com/documentation/usage/donation-leaderboard/), recognizing and motivating generous contributions.
 * 🆓 **Free & Open Source**: No platform fees or subscriptions, ensuring accessibility for charities of all sizes!
 
@@ -48,6 +49,7 @@ Harness the power of WooCommerce for online fundraising, crowdfunding, and donor
 * 📜 **Thank You Certificates**: Personalized certificates for donors, acknowledging their support.
 * 🏆 **Donation Leaderboard**: Showcase top donors with a [donor wall](https://www.wc-donation.com/documentation/usage/donation-leaderboard/), recognizing and motivating generous contributions.
 * 💰 **Fee Recovery Options**: Empower donors to cover transaction costs, maximizing contributions.
+* 🛍️ **Donation Upsells**: Add optional checkout donations for regular webshop purchases with reusable upsell types.
 * 🔄 **Unlimited Integrations**: Seamlessly integrate with CRM, Marketing & Analytics tools for comprehensive insights.
 * 🆓 **Free & Open Source**: A no-fee solution for charities, ensuring every penny counts towards the cause.
 
@@ -85,6 +87,7 @@ Thanks to its extensive features, the Fundraising & Donation Platform is suitabl
 * **Donation Receipts**: Donation Platform for WooCommerce provides a template for your charity to automatically issue donation receipts.
 * **Free Donations**: There are no paid extensions for Donation Platform for WooCommerce: Fundraising & Donation Management. However, this does not apply to all extensions for WooCommerce.
 * **Fee Recovery**: Donors have the option to cover transaction costs.
+* **Donation Upsells**: Let customers add optional checkout donations as a round-up or as a fixed amount plus a percentage of the cart value.
 * **Open Source Fundraising**: Donation Platform for WooCommerce: Fundraising & Donation Management is open source software released under the terms of the GNU General Public License v2.0
 * **Own Your Fundraising Data**: All donation data belong exclusively to your charity and are under your full control. You are not tied to any other company that handles the donations for you.
 * **Privacy Friendly Donations**: WooCommerce and WordPress include privacy tools that make it easier to handle Right to Access and Right to Erasure requests from donors. This allows you to easily comply with regulations such as GDPR or CCPA.
@@ -164,6 +167,35 @@ If you want to disable the wording changes applied by Donation Platform for WooC
 
 == Changelog ==
 Active development of Donation Platform for WooCommerce: Fundraising & Donation Management is handled [on GitHub](https://github.com/wc-donation/wc-donation-platform/).
+
+= 1.5.0 =
+feat: add donation upsells with round-up and fixed + percentage checkout donation types
+feat: granular template override system with configurable precedence
+feat: add donation source tracking for forms, orders, progress bars, and leaderboards
+feat: add Style 6 layout with clean back navigation
+feat: allow configuring checkout position for leaderboard anonymous checkbox
+feat: replace browser-native validation with WooCommerce-style inline field validation
+feat: donation context aware WooCommerce Subscriptions integration
+feat: add compatibility with WooCommerce PDF Invoices & Packing Slips v3 and v6
+feat: add exclude_fees attribute to leaderboard shortcode
+feat: add Git Updater compatibility headers
+dev: add wcdp_template_override_precedence filter for template override resolution
+dev: add wcdp_anonymous_donation_checkbox_location filter
+dev: add settings sections navigation and filter hooks
+dev: add template action hooks across form steps for improved extensibility
+dev: add context-based body classes to donation pages
+fix: harden donation amount normalization for different locales
+fix: prevent clearing custom donation amount when clicking or editing the field
+fix: context-aware order notes label ("Donation notes" instead of "Order notes")
+fix: prevent shipping method infinite reload loop on checkout
+fix: override add-to-cart templates for simple and variable subscriptions in Style 2
+fix: High-Performance Order Storage (HPOS) compatibility for Polylang integration
+fix: email preview not working
+fix: sync variation buttons when options are unavailable or disabled
+fix: default layout for attributes not working
+a11y: add keyboard arrow navigation for donation amount choices
+a11y: switch form interaction events to pointer events to support touch devices
+chore: bump tested WordPress version to 7.1
 
 = 1.4.0 2026-02-05 =
 feat: complete refactoring of Leaderboard functionality

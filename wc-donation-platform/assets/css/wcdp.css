@@ -293,14 +293,16 @@ ul.wcdp_options>li>input:hover:not(:disabled):not(:checked)+label {
 }
 
 .wcdp_options>li>input:checked+label:after {
-    content: url('data:image/svg+xml; utf8, <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1000 1000" width="15px" height="20px" xml:space="preserve"><g><path style="fill: white;" d="M990,210.8L924.3,145L345.1,724.2L75.7,454.8L10,520.6l325.5,325.5l9.2,8.9l9.8-8.9L990,210.8L990,210.8z"/></g></svg>');
+    mask-image: url('data:image/svg+xml; utf8, <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1000 1000" width="15px" height="20px" xml:space="preserve"><g><path style="fill: white;" d="M990,210.8L924.3,145L345.1,724.2L75.7,454.8L10,520.6l325.5,325.5l9.2,8.9l9.8-8.9L990,210.8L990,210.8z"/></g></svg>');
     position: absolute;
-
-    /*
-    content: '\E017';
-    font-family: 'Woocommerce';
-    */
-    padding-left: 5px;
+    margin-left: 5px;
+    content: "";
+    background-color: currentColor;
+    mask-size: contain;
+    mask-repeat: no-repeat;
+    display: inline;
+    width: 20px;
+    height: 20px;
 }
 
 .wcdp_options>li>label {
@@ -346,9 +348,12 @@ ul.wcdp_options>li>input:hover:not(:disabled):not(:checked)+label {
     /*min-width: max-content;*/
 }
 
-ul.wcdp_options>li>input:checked+label,
-ul.wcdp_options>li>input:checked+label span {
+ul.wcdp_options>li>input:checked+label {
     background: var(--wcdp-main-2);
+    color: var(--wcdp-label-text-checked);
+}
+
+.ul.wcdp_options>li>input:checked+label span {
     color: var(--wcdp-label-text-checked);
 }
 
@@ -462,6 +467,34 @@ form[name="checkout"] .wcdp-tab div:first-child {
     position: relative;
     margin-top: 20%;
     left: calc(50% - 36px);
+}
+
+.wcdp-style-6-back-wrap {
+    margin: 0 0 12px;
+}
+
+.wcdp-style-6-back,
+.wcdp-style-6-back:focus,
+.wcdp-style-6-back:hover {
+    display: inline-flex;
+    align-items: center;
+    justify-content: left;
+    width: 36px;
+    height: 36px;
+    border: 0;
+    background: transparent;
+    padding: 0;
+    cursor: pointer;
+}
+
+.wcdp-style-6-back-icon {
+    width: 20px;
+    height: 20px;
+}
+
+.wcdp-style-6-back:focus-visible {
+    outline: 2px solid var(--wcdp-main-2);
+    outline-offset: 2px;
 }
 
 /* compatibility Twenty Twenty-One */
@@ -582,6 +615,7 @@ input:focus+.wcdp-fee-recovery__body {
     cursor: pointer;
     border: 2px solid var(--wcdp-main-2);
     text-align: left;
+    padding-right: 6px;
 }
 
 .wcdp-fee-recovery__input:checked~.wcdp-fee-recovery__body .wcdp-fee-recovery__body-cover-checkbox--svg {
@@ -622,7 +656,7 @@ input:focus+.wcdp-fee-recovery__body {
     width: 100%;
 }
 
-.wcdp-form button,
+.wcdp-form .button,
 .wcdp-button {
     background-color: var(--wcdp-main-2);
     color: var(--wcdp-label-text-checked);
@@ -630,6 +664,87 @@ input:focus+.wcdp-fee-recovery__body {
     text-align: center;
     padding: 6px 20px;
     cursor: pointer;
+}
+
+.wcdp-theme-2 .wcdp_options {
+    gap: 10px;
+}
+
+.wcdp-theme-2 .wcdp-theme-2-custom-amount-wrapper {
+    margin-top: 12px;
+    display: block;
+    box-shadow: inset 0 0 0 1px var(--wcdp-label-inactive);
+    border-radius: 10px;
+    padding: calc(12px - 0.15em) 14px;
+    transition: all .2s ease;
+    background: var(--wcdp-background-color);
+    color: var(--wcdp-controls);
+}
+
+.wcdp-theme-2 .wcdp-theme-2-custom-amount-wrapper:has(input:focus) {
+    box-shadow: inset 0 0 0 2px var(--wcdp-main-2);
+}
+
+.wcdp-theme-2 .wcdp-theme-2-custom-field {
+    display: flex;
+    width: 100%;
+    align-items: center;
+}
+
+.wcdp-theme-2 .wcdp-theme-2-custom-field input.wcdp_donation_amount_field {
+    width: 100%;
+}
+
+.wcdp-theme-2 .wcdp_value_other:not(:checked)~.wcdp_label_custom_amount>.wcdp_cu_field,
+.wcdp-theme-2 .wcdp_value_other:checked~.wcdp_label_custom_amount>.wcdp_cu_field {
+    display: block;
+}
+
+.wcdp-theme-2 .wcdp_label_custom_amount,
+.wcdp-theme-2 .wcdp_value_other:checked+.wcdp_label_custom_amount {
+    text-align: left;
+    background: var(--wcdp-background-color);
+    color: inherit;
+    box-shadow: none;
+}
+
+.wcdp-theme-2 .wcdp_value_other:checked+.wcdp_label_custom_amount:after {
+    content: none;
+}
+
+.wcdp-theme-2 .wcdp_cu_field input[type="number"] {
+    appearance: textfield;
+    -moz-appearance: textfield;
+    background: none;
+    border: none;
+    outline: none;
+    font-size: 1.3em;
+}
+
+.wcdp-theme-2 .wcdp_cu_field input[type="number"]::-webkit-outer-spin-button,
+.wcdp-theme-2 .wcdp_cu_field input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.wcdp-theme-2 ul.wcdp_options>li>label {
+    box-shadow: inset 0 0 0 1px var(--wcdp-label-inactive);
+    border-radius: 10px;
+    padding: 12px 14px;
+    transition: all 0.2s ease;
+    background: var(--wcdp-background-color);
+    color: var(--wcdp-controls);
+}
+
+.wcdp-theme-2 ul.wcdp_options>li>input:hover:not(:disabled):not(:checked)+label {
+    box-shadow: inset 0 0 0 2px var(--wcdp-main-2);
+    background: transparent;
+}
+
+.wcdp-theme-2 ul.wcdp_options>li>input:checked+label {
+    background: color-mix(in srgb, var(--wcdp-main-2), transparent 85%);
+    box-shadow: inset 0 0 0 2px var(--wcdp-main-2);
+    color: var(--wcdp-controls);
 }
 
 .wcdp-product-image {

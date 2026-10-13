@@ -23,6 +23,8 @@ if (!defined('ABSPATH'))
 
 <?php
 $form_id = wp_unique_id('wcdp_') . '_';
+$theme = isset($value['theme']) && (int) $value['theme'] === 2 ? 2 : 1;
+$theme_classes = $theme === 2 ? 'wcdp-theme-2 wcdp-theme-modern' : 'wcdp-theme-1';
 
 //Encapsulate donation form in a popup?
 if ($value['popup']):
@@ -38,7 +40,7 @@ if ($value['popup']):
             <div class="wcdp">
             <?php endif; ?>
 
-            <div class="wc-donation-platform woocommerce wcdp-form <?php echo esc_attr($value['className']); ?>"
+            <div class="wc-donation-platform woocommerce wcdp-form <?php echo esc_attr($theme_classes . ' ' . $value['className']); ?>"
                 id="wcdp" style="visibility:hidden" data-formid="<?php echo $form_id; ?>">
                 <div class="lds-ellipsis wcdp-loader">
                     <div></div>
@@ -52,6 +54,8 @@ if ($value['popup']):
                 if ($value['image']) {
                     echo '<div class="wcdp-product-image">' . $product->get_image('medium_large') . '</div>';
                 }
+
+                do_action('wcdp_before_donation_form', $product_id, $context);
 
                 switch ($value['style']) {
                     case 2:
@@ -123,6 +127,24 @@ if ($value['popup']):
                         );
 
                         break;
+                    case '6':
+                        //Style 6: steps without header, top back arrow, bottom next buttons
+                        wc_get_template(
+                            'styles/wcdp_form_style_6.php',
+                            array(
+                                'value' => $value,
+                                'product' => $product,
+                                'context' => $context,
+                                'product_id' => $product_id,
+                                'has_child' => $has_child,
+                                'checkout' => $checkout,
+                                'form_id' => $form_id,
+                            ),
+                            '',
+                            WCDP_DIR . 'includes/templates/'
+                        );
+
+                        break;
                     /** @noinspection PhpMissingBreakStatementInspection */
                     case 'checkout':
                         if ($context == 'checkout') {
@@ -164,6 +186,8 @@ if ($value['popup']):
 
                         break;
                 }
+
+                do_action('wcdp_after_donation_form', $product_id, $context);
 
                 ?>
             </div>

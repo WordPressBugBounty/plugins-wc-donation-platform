@@ -24,9 +24,8 @@ class WCDP_Leaderboard
         add_action('woocommerce_analytics_update_product', array($this, 'delete_stale_orders_cache'), 10, 2);
 
         if (get_option('wcdp_enable_checkout_checkbox', 'no') === 'yes') {
-            // Add checkbox to WooCommerce checkout
-            $checkbox_location = apply_filters('anonymous_donation_checkbox_location', 'woocommerce_review_order_before_submit');
-            add_action($checkbox_location, array($this, 'add_anonymous_donation_checkbox'));
+            $checkbox_location = apply_filters('anonymous_donation_checkbox_location', $this->get_checkbox_position_hook());
+            add_action($checkbox_location, array('WCDP_Leaderboard', 'add_anonymous_donation_checkbox'));
 
             //Save the value of the WooCommerce checkout checkbox
             add_action('woocommerce_checkout_create_order', array($this, 'save_anonymous_donation_checkbox'));
@@ -84,6 +83,8 @@ class WCDP_Leaderboard
             "split" => -1,
             "button" => __("Show more", "wc-donation-platform"),
             "fallback" => __('No donation data to display.', 'wc-donation-platform'),
+            "exclude_fees" => 'no',
+            "source" => '',
         ), $atts, 'wcdp_leaderboard');
 
         $atts['orderby'] = $atts['orderby'] === 'date' ? 'date' : 'total';
@@ -107,11 +108,28 @@ class WCDP_Leaderboard
 
         $limit = intval($atts['limit']);
         $limit = max(1, min(1000, $limit)); // Enforce reasonable limits
+        $exclude_fees = $this->is_truthy_string($atts['exclude_fees']);
+        $source = WCDP_Form::sanitize_source($atts['source']);
 
-        $orders = $this->get_orders($product_ids, $atts['orderby'], $limit);
+        $orders = $this->get_orders($product_ids, $atts['orderby'], $limit, $exclude_fees, $source);
 
         // Generate the HTML output
         return $this->generate_leaderboard($orders, (int) $atts['style'], (int) $atts['split'], $atts['button'], $atts['fallback']);
+    }
+
+    /**
+     * Parse common shortcode boolean-ish strings (yes/no, true/false, 1/0)
+     * @param mixed $value
+     * @return bool
+     */
+    private function is_truthy_string($value): bool
+    {
+        if (is_bool($value)) {
+            return $value;
+        }
+
+        $value = strtolower(trim((string) $value));
+        return in_array($value, array('1', 'true', 'yes', 'on'), true);
     }
 
     /**
@@ -160,17 +178,18 @@ class WCDP_Leaderboard
      * @param int $limit
      * @return array
      */
-    private function get_orders(array $product_ids, string $orderby, int $limit): array
+    private function get_orders(array $product_ids, string $orderby, int $limit, bool $exclude_fees = false, string $source = ''): array
     {
-        $cache_key = $this->generate_cache_key($product_ids, $orderby, $limit);
+        $source = WCDP_Form::sanitize_source($source);
+        $cache_key = $this->generate_cache_key($product_ids, $orderby, $limit, $exclude_fees, $source);
 
         $orders = json_decode(get_transient($cache_key), true);
 
         if (empty($orders)) {
             if (in_array(-1, $product_ids)) {
-                $orders = $this->get_orders_db_all($orderby, $limit);
+                $orders = $this->get_orders_db_all($orderby, $limit, $exclude_fees, $source);
             } else {
-                $orders = $this->get_orders_db_by_product_ids($product_ids, $orderby, $limit);
+                $orders = $this->get_orders_db_by_product_ids($product_ids, $orderby, $limit, $exclude_fees, $source);
             }
 
             set_transient($cache_key, wp_json_encode($orders), apply_filters("wcdp_cache_expiration", 6 * HOUR_IN_SECONDS));
@@ -190,14 +209,20 @@ class WCDP_Leaderboard
      * @param int $limit
      * @return string
      */
-    private function generate_cache_key(array $product_ids, string $orderby, int $limit): string
+    private function generate_cache_key(array $product_ids, string $orderby, int $limit, bool $exclude_fees, string $source = ''): string
     {
         $product_string = implode(',', $product_ids);
         $base_key = 'wcdp_orders_';
+        $fees_flag = $exclude_fees ? 'nofees' : '';
+        $source = WCDP_Form::sanitize_source($source);
+
+        if ($source !== '') {
+            return $base_key . 'src_' . md5($product_string . '|' . $orderby . '|' . $limit . '|' . $fees_flag . '|' . $source);
+        }
 
         // Check if we can use a simple concatenation (WordPress transient keys max length is ~172 chars)
         // Leave room for prefix, orderby, limit and separators
-        $simple_key = $base_key . $product_string . '_' . $orderby . '_' . $limit;
+        $simple_key = $base_key . $product_string . '_' . $orderby . '_' . $limit . '_' . $fees_flag;
 
         // Use simple key if it's short enough and contains only safe characters
         if (strlen($simple_key) <= 150 && ctype_alnum(str_replace([',', '_', '-'], '', $simple_key))) {
@@ -205,7 +230,7 @@ class WCDP_Leaderboard
         }
 
         // For longer or complex product ID lists, use MD5 hash
-        return $base_key . 'h_' . md5($product_string) . '_' . $orderby . '_' . $limit;
+        return $base_key . 'h_' . md5($product_string) . '_' . $orderby . '_' . $limit . '_' . $fees_flag;
     }
 
     /**
@@ -217,7 +242,7 @@ class WCDP_Leaderboard
     private function should_invalidate_cache_key(string $cache_key, array $changed_product_ids): bool
     {
         // Always invalidate cache for "all donation products" (contains -1)
-        if (strpos($cache_key, 'wcdp_orders_-1_') === 0 || strpos($cache_key, 'wcdp_orders_h_') === 0) {
+        if (strpos($cache_key, 'wcdp_orders_-1_') === 0 || strpos($cache_key, 'wcdp_orders_h_') === 0 || strpos($cache_key, 'wcdp_orders_src_') === 0) {
             // For hashed keys, we need to be conservative and invalidate all
             // Check if -1 is in the simple key format
             return true;
@@ -246,7 +271,7 @@ class WCDP_Leaderboard
      * @param int $limit
      * @return array
      */
-    private function get_orders_db_all(string $orderby, int $limit): array
+    private function get_orders_db_all(string $orderby, int $limit, bool $exclude_fees = false, string $source = ''): array
     {
         // Get cached donable product IDs
         $donable_product_ids = $this->get_cached_donable_products();
@@ -257,7 +282,7 @@ class WCDP_Leaderboard
         }
 
         // Use the consolidated function to get orders for these donable products
-        return $this->get_orders_db_by_product_ids($donable_product_ids, $orderby, $limit);
+        return $this->get_orders_db_by_product_ids($donable_product_ids, $orderby, $limit, $exclude_fees, $source);
     }
 
     /**
@@ -279,10 +304,10 @@ class WCDP_Leaderboard
         // Query only published products that are donable and available for purchase
         // Excludes trashed, draft, private products
         $donable_products = $wpdb->get_col("
-            SELECT DISTINCT pm.post_id 
+            SELECT DISTINCT pm.post_id
             FROM {$wpdb->postmeta} pm
             INNER JOIN {$wpdb->posts} p ON pm.post_id = p.ID
-            WHERE pm.meta_key = '_donable' 
+            WHERE pm.meta_key = '_donable'
                 AND pm.meta_value = 'yes'
                 AND p.post_type = 'product'
                 AND p.post_status = 'publish'
@@ -311,35 +336,45 @@ class WCDP_Leaderboard
      * @param int $limit
      * @return array
      */
-    private function get_orders_db_by_product_ids(array $product_ids, string $orderby, int $limit): array
+    private function get_orders_db_by_product_ids(array $product_ids, string $orderby, int $limit, bool $exclude_fees = false, string $source = ''): array
     {
         if (empty($product_ids)) {
             return array();
         }
 
+        global $wpdb;
+        $source = WCDP_Form::sanitize_source($source);
+        $source_join = '';
+        $source_where = '';
+        if ($source !== '') {
+            $source_join = " INNER JOIN {$wpdb->prefix}woocommerce_order_itemmeta sim ON l.order_item_id = sim.order_item_id";
+            $source_where = " AND sim.meta_key = '_wcdp_source' AND sim.meta_value = %s";
+        }
+
         // Create placeholders for product IDs
         $placeholders = implode(',', array_fill(0, count($product_ids), '%d'));
 
-        global $wpdb;
         if (OrderUtil::custom_orders_table_usage_is_enabled()) {
             if ($orderby === 'date') {
                 $orderby_sql = 'o.date_created_gmt DESC, l.order_item_id';
             } else {
                 $orderby_sql = 'l.product_gross_revenue DESC, o.date_created_gmt';
             }
-            $query = "SELECT 
+            $query = "SELECT
                     o.id as order_id,
                     l.order_item_id,
                     l.product_id,
                     l.product_gross_revenue as item_total,
                     o.date_created_gmt
-                FROM 
+                FROM
                     {$wpdb->prefix}wc_orders o
                     INNER JOIN {$wpdb->prefix}wc_order_product_lookup l ON o.id = l.order_id
-                WHERE 
+                    {$source_join}
+                WHERE
                     o.status = 'wc-completed'
                     AND o.type = 'shop_order'
                     AND l.product_id IN ($placeholders)
+                    {$source_where}
                 ORDER BY $orderby_sql
                 LIMIT %d;";
         } else {
@@ -348,25 +383,31 @@ class WCDP_Leaderboard
             } else {
                 $orderby_sql = 'l.product_gross_revenue DESC, o.post_date';
             }
-            $query = "SELECT 
+            $query = "SELECT
                     o.ID as order_id,
                     l.order_item_id,
                     l.product_id,
                     l.product_gross_revenue as item_total,
                     o.post_date as date_created
-                FROM 
+                FROM
                     {$wpdb->prefix}posts o
                     INNER JOIN {$wpdb->prefix}wc_order_product_lookup l ON o.ID = l.order_id
-                WHERE 
-                    o.post_type = 'shop_order' 
+                    {$source_join}
+                WHERE
+                    o.post_type = 'shop_order'
                     AND o.post_status = 'wc-completed'
                     AND l.product_id IN ($placeholders)
+                    {$source_where}
                 ORDER BY $orderby_sql
                 LIMIT %d;";
         }
 
         // Prepare query with product IDs and limit
-        $prepare_params = array_merge($product_ids, array($limit));
+        $prepare_params = $product_ids;
+        if ($source !== '') {
+            $prepare_params[] = $source;
+        }
+        $prepare_params[] = $limit;
 
         $query = $wpdb->prepare($query, $prepare_params);
         $donation_data = $wpdb->get_results($query, ARRAY_A);
@@ -396,9 +437,11 @@ class WCDP_Leaderboard
 
                 // Check if we should include transaction fee
                 $final_amount = (double) $item_total;
-                $transaction_fee = $this->get_transaction_fee_for_single_donation_order($order);
-                if ($transaction_fee > 0) {
-                    $final_amount += $transaction_fee;
+                if (!$exclude_fees) {
+                    $transaction_fee = $this->get_transaction_fee_for_single_donation_order($order);
+                    if ($transaction_fee > 0) {
+                        $final_amount += $transaction_fee;
+                    }
                 }
 
                 $donation_clean = array(
@@ -742,21 +785,41 @@ class WCDP_Leaderboard
     }
 
     /**
+     * Return the hook for the configured checkbox position.
+     * WC hooks fire in both WC-native checkout (form-checkout.php) and
+     * WCDP one-pager templates (wcdp_step_2.php). The wcdp_checkout_after_name_fields
+     * hook is fired from our form-billing.php override after billing_last_name renders.
+     *
+     * @return string
+     */
+    private function get_checkbox_position_hook(): string
+    {
+        $position_map = array(
+            'before_donor' => 'woocommerce_checkout_before_customer_details',
+            'after_name' => 'wcdp_checkout_after_name_fields',
+            'after_donor' => 'woocommerce_checkout_after_customer_details',
+            'above_submit' => 'woocommerce_review_order_before_submit',
+        );
+
+        $stored = (string) get_option('wcdp_anon_checkbox_location', 'after_name');
+
+        return $position_map[$stored] ?? $position_map['after_name'];
+    }
+
+    /**
      * Add an "anonymous donation" checkbox to the checkout
      * @return void
      */
-    public function add_anonymous_donation_checkbox()
+    public static function add_anonymous_donation_checkbox()
     {
-        if (!WCDP_Form::cart_contains_donation()) {
+        if (!WCDP_Form::is_donation_checkout_context()) {
             return;
         }
-        echo '<div class="anonymous-donation-checkbox">';
         woocommerce_form_field('wcdp_checkout_checkbox', array(
             'type' => 'checkbox',
-            'class' => array('input-checkbox'),
+            'class' => array('input-checkbox', 'form-row-wide', 'wcdp-checkout-checkbox', 'wcdp-anonymous-donation-checkbox', 'anonymous-donation-checkbox'),
             'label' => get_option("wcdp_checkout_checkbox_text", __('Do not show my name in the leaderboard', 'wc-donation-platform')),
         ), WC()->checkout->get_value('wcdp_checkout_checkbox'));
-        echo '</div>';
     }
 
     /**

@@ -79,6 +79,7 @@ class WCDP_Form
         $value = shortcode_atts(array(
             'id' => 0,
             'style' => 1,
+            'theme' => 1,
             'popup' => 0,
             'button' => 1,
             'title' => 0,
@@ -86,8 +87,15 @@ class WCDP_Form
             'short_description' => 0,
             'image' => 0,
             'className' => '',
-            'label' => __("Donate now!", "wc-donation-platform")
+            'label' => __("Donate now!", "wc-donation-platform"),
+            'source' => '',
         ), $value);
+
+        $value['source'] = self::sanitize_source($value['source']);
+        $value['theme'] = absint($value['theme']);
+        if (!in_array($value['theme'], array(1, 2), true) || !function_exists('wcdpp_is_active') || !wcdpp_is_active()) {
+            $value['theme'] = 1;
+        }
 
         $product_id = (int) $value['id'];
         $checkout = WC()->checkout();
@@ -122,7 +130,7 @@ class WCDP_Form
                     wp_enqueue_script('wc-add-to-cart-variation');
                 }
 
-                WCDP_Form::wcdp_enqueue_scripts($value['style'] !== 4);
+                WCDP_Form::wcdp_enqueue_scripts($value['style'] !== 4, true);
                 wc_get_template(
                     'wcdp_form.php',
                     array(
@@ -154,9 +162,11 @@ class WCDP_Form
             return '';
         }
 
+        $popup_button_theme_class = $value['theme'] === 2 ? ' wcdp-theme-2-button' : '';
+
         return '<p>
             <a href="#wcdp-form">
-                <button type="button" class="button wcdp-modal-open wcdp-button">'
+                <button type="button" class="button wcdp-modal-open wcdp-button' . esc_attr($popup_button_theme_class) . '">'
             . esc_html($value['label']) .
             '</button>
             </a>
@@ -165,7 +175,7 @@ class WCDP_Form
 
     /**
      * Checks if a grouped product has at least one purchasable donation child product
-     * 
+     *
      * @param mixed $product
      * @return bool
      */
@@ -210,7 +220,7 @@ class WCDP_Form
      * Enqueue CSS & JS Files
      * @return void
      */
-    private static function wcdp_enqueue_scripts($is_checkout = true)
+    private static function wcdp_enqueue_scripts($is_checkout = true, $needs_wc_cart = false)
     {
         //Dependencies
         $cssdeps = array(
@@ -223,12 +233,18 @@ class WCDP_Form
 
         $jsdeps = array(
             'wc-donation-platform',
-            'jquery',
             'selectWoo',
             'select2',
-            'wc-cart',
             'wp-hooks'
         );
+
+        // Only enqueue wc-cart when a WCDP form is actually rendered on the page.
+        // Enqueuing wc-cart on standard checkout pages (without an embedded WCDP
+        // form) causes WC's cart-page shipping handler to fire on checkout's
+        // shipping radios, triggering a cart AJAX update that navigates away.
+        if ($needs_wc_cart) {
+            $jsdeps[] = 'wc-cart';
+        }
 
         // style 4 only renders an add2cart form
         if ($is_checkout) {
@@ -385,7 +401,11 @@ class WCDP_Form
             ) {
                 $html .= ' checked="checked"';
             }
-            $html .= ' required>';
+            if ($input_name === 'donation-amount') {
+                $html .= '>';
+            } else {
+                $html .= ' required>';
+            }
             $label_id = $option['label-id'] !== '' ? esc_attr($form_id . $option['label-id']) : '';
             $html .= '<label id="' . $label_id . '" class="' . esc_attr($option['label-class']) . '" for="' . $form_id . esc_attr($option['input-id']) . '">';
             $html .= wp_kses(apply_filters('wcdp_label_' . esc_attr($option['input-value']), $option['label-text'], $args), $allowed_html);
@@ -439,6 +459,8 @@ class WCDP_Form
      */
     public function wcdp_register_scripts()
     {
+        $script_file = (defined('SCRIPT_DEBUG') && SCRIPT_DEBUG) ? 'assets/js/wcdp.js' : 'assets/js/wcdp.min.js';
+
         wp_register_style(
             'wc-donation-platform',
             WCDP_DIR_URL . 'assets/css/wcdp.min.css',
@@ -447,8 +469,8 @@ class WCDP_Form
         );
         wp_register_script(
             'wc-donation-platform',
-            WCDP_DIR_URL . 'assets/js/wcdp.min.js',
-            array(),
+            WCDP_DIR_URL . $script_file,
+            array('wp-i18n'),
             WCDP_VERSION,
             array(
                 'strategy' => 'defer',
@@ -462,7 +484,10 @@ class WCDP_Form
     }
 
     /**
-     * return true if there is a donation form on the site
+     * return true if there is a donation form context on the current page.
+     * Covers: WooCommerce product/checkout pages, Gutenberg block, shortcodes,
+     * and AJAX requests that pass a postid parameter.
+     *
      * @return bool
      */
     public static function wcdp_has_donation_form(): bool
@@ -478,16 +503,30 @@ class WCDP_Form
             || (!is_null($post)
                 && (has_shortcode($post->post_content, 'wcdp_donation_form') || has_shortcode($post->post_content, 'product_page'))
             )
+            || (isset($_REQUEST['postid']) && absint($_REQUEST['postid']) > 0)
         ) {
-            if (!defined('WCDP_FORM')) {
-                define('WCDP_FORM', true);
-            }
+            define('WCDP_FORM', true);
             return true;
         }
         if (!is_null($post)) {
             define('WCDP_FORM', false);
         }
         return false;
+    }
+
+    /**
+     * Return true if the current context is a donation checkout:
+     * either the cart contains only donations, or the page has a donation form.
+     *
+     * @return bool
+     */
+    public static function is_donation_checkout_context(): bool
+    {
+        if (WC()->cart && !empty(WC()->cart->get_cart_contents())) {
+            return self::cart_contains_only_donations();
+        }
+
+        return self::wcdp_has_donation_form();
     }
 
     /**
@@ -505,7 +544,12 @@ class WCDP_Form
                 'style' => array(
                     'type' => 'number',
                     'default' => 1,
-                    'enum' => array(1, 2, 3, 4, 5),
+                    'enum' => array(1, 2, 3, 4, 5, 6),
+                ),
+                'theme' => array(
+                    'type' => 'number',
+                    'default' => 1,
+                    'enum' => array(1, 2),
                 ),
                 'popup' => array(
                     'type' => 'boolean',
@@ -600,15 +644,23 @@ class WCDP_Form
             }
         }
 
-        $wcdp_donation_amount = sanitize_text_field($_REQUEST['wcdp-donation-amount']);
-        if (!$this->check_donation_amount($wcdp_donation_amount, $product_id) || !isset(WC()->cart)) {
+        $wcdp_donation_amount = self::normalize_donation_amount($_REQUEST['wcdp-donation-amount']);
+        if (is_null($wcdp_donation_amount) || !$this->check_donation_amount($wcdp_donation_amount, $product_id) || !isset(WC()->cart)) {
             $response['message'] = esc_html__('Invalid donation amount. Please enter a different donation amount.', 'wc-donation-platform');
             $response['reload'] = false;
             return $response;
         }
 
         $this->maybe_empty_cart($product_id, $product_choices);
-        if (false === WC()->cart->add_to_cart($product_id, 1, $variation_id, $variation, array('wcdp_donation_amount' => $wcdp_donation_amount))) {
+        $cart_item_data = array('wcdp_donation_amount' => $wcdp_donation_amount);
+        if (!empty($_REQUEST['wcdp_source'])) {
+            $source = self::sanitize_source(wp_unslash($_REQUEST['wcdp_source']));
+            if ($source !== '') {
+                $cart_item_data['wcdp_source'] = $source;
+            }
+        }
+
+        if (false === WC()->cart->add_to_cart($product_id, 1, $variation_id, $variation, $cart_item_data)) {
             $response['message'] = esc_html__('Could not add donation to cart.', 'wc-donation-platform');
             return $response;
         }
@@ -620,6 +672,39 @@ class WCDP_Form
     }
 
     /**
+     * Normalize a donation amount input to WooCommerce price precision.
+     *
+     * Rejects unsupported numeric formats (for example scientific notation)
+     * so the validated value matches what is later stored and charged.
+     *
+     * @param mixed $donation_amount
+     * @return string|null
+     */
+    private static function normalize_donation_amount($donation_amount): ?string
+    {
+        if (!is_scalar($donation_amount)) {
+            return null;
+        }
+
+        $donation_amount = trim(wp_unslash((string) $donation_amount));
+        if ($donation_amount === '') {
+            return null;
+        }
+
+        if (!preg_match('/^(?:\d+|\d+\.\d+|\.\d+)$/', $donation_amount)) {
+            return null;
+        }
+
+        $price_decimals = (int) wc_get_price_decimals();
+        if ($price_decimals < 0) {
+            $price_decimals = 0;
+        }
+
+        return number_format((float) $donation_amount, $price_decimals, '.', '');
+    }
+
+
+    /**
      * Check if specified donation amount is valid
      * @param $donation_amount
      * @param $product_id int
@@ -627,9 +712,33 @@ class WCDP_Form
      */
     public static function check_donation_amount($donation_amount, int $product_id = 0): bool
     {
+        $donation_amount = self::normalize_donation_amount($donation_amount);
+        if (is_null($donation_amount)) {
+            return false;
+        }
+
+        $donation_amount = (float) $donation_amount;
         $min_donation_amount = (float) apply_filters('wcdp_min_amount', get_option('wcdp_min_amount', 3), $product_id);
         $max_donation_amount = (float) apply_filters('wcdp_max_amount', get_option('wcdp_max_amount', 50000), $product_id);
         return $donation_amount >= $min_donation_amount && $donation_amount <= $max_donation_amount;
+    }
+
+    /**
+     * Sanitize a tracking source used by forms, carts, orders and reporting shortcodes.
+     *
+     * @param mixed $source Raw source value.
+     * @return string
+     */
+    public static function sanitize_source($source): string
+    {
+        $source = sanitize_text_field((string) $source);
+        $source = trim($source);
+
+        if ($source === '') {
+            return '';
+        }
+
+        return substr($source, 0, 191);
     }
 
     /**
@@ -703,6 +812,5 @@ class WCDP_Form
         }
     }
 }
-
 
 
